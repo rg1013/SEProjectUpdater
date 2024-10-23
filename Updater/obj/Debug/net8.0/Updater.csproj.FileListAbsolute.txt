@@ -10,3 +10,4 @@ C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\Updater\obj\Deb
 C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\Updater\obj\Debug\net8.0\refint\Updater.dll
 C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\Updater\obj\Debug\net8.0\Updater.pdb
 C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\Updater\obj\Debug\net8.0\ref\Updater.dll
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\Updater\obj\Debug\net8.0\Updater.sourcelink.json

@@ -1132,23 +1132,12 @@
           }
         }
       },
-      "ActivityTracker/1.0.0": {
-        "type": "project",
-        "framework": ".NETCoreApp,Version=v8.0",
-        "compile": {
-          "bin/placeholder/ActivityTracker.dll": {}
-        },
-        "runtime": {
-          "bin/placeholder/ActivityTracker.dll": {}
-        }
-      },
       "ActivityTrackerViewModel/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
         "dependencies": {
-          "ActivityTracker": "1.0.0",
           "Microsoft.Windows.Compatibility": "8.0.10",
-          "UpdaterViewModel": "1.0.0"
+          "Updater": "1.0.0"
         },
         "compile": {
           "bin/placeholder/ActivityTrackerViewModel.dll": {}
@@ -1159,6 +1148,19 @@
         "frameworkReferences": [
           "Microsoft.WindowsDesktop.App.WPF"
         ]
+      },
+      "Updater/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "Microsoft.Windows.Compatibility": "8.0.10"
+        },
+        "compile": {
+          "bin/placeholder/Updater.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Updater.dll": {}
+        }
       },
       "UpdaterViewModel/1.0.0": {
         "type": "project",
@@ -3061,15 +3063,15 @@
         "useSharedDesignerContext.txt"
       ]
     },
-    "ActivityTracker/1.0.0": {
-      "type": "project",
-      "path": "../ActivityTracker/ActivityTracker.csproj",
-      "msbuildProject": "../ActivityTracker/ActivityTracker.csproj"
-    },
     "ActivityTrackerViewModel/1.0.0": {
       "type": "project",
       "path": "../ActivityTrackerViewModel/ActivityTrackerViewModel.csproj",
       "msbuildProject": "../ActivityTrackerViewModel/ActivityTrackerViewModel.csproj"
+    },
+    "Updater/1.0.0": {
+      "type": "project",
+      "path": "../Updater/Updater.csproj",
+      "msbuildProject": "../Updater/Updater.csproj"
     },
     "UpdaterViewModel/1.0.0": {
       "type": "project",

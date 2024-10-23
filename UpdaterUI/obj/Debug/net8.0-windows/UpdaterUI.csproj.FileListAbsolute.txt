@@ -97,12 +97,10 @@ C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterUI\bin\D
 C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterUI\bin\Debug\net8.0-windows\runtimes\win\lib\net8.0\System.Security.Cryptography.Pkcs.dll
 C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterUI\bin\Debug\net8.0-windows\runtimes\win\lib\net8.0\System.ServiceProcess.ServiceController.dll
 C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterUI\bin\Debug\net8.0-windows\runtimes\win\lib\net8.0\System.Speech.dll
-C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterUI\bin\Debug\net8.0-windows\ActivityTracker.dll
 C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterUI\bin\Debug\net8.0-windows\ActivityTrackerViewModel.dll
 C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterUI\bin\Debug\net8.0-windows\UpdaterViewModel.dll
 C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterUI\bin\Debug\net8.0-windows\ActivityTrackerViewModel.pdb
 C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterUI\bin\Debug\net8.0-windows\UpdaterViewModel.pdb
-C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterUI\bin\Debug\net8.0-windows\ActivityTracker.pdb
 C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterUI\obj\Debug\net8.0-windows\MainWindow.baml
 C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterUI\obj\Debug\net8.0-windows\UpdaterUI.g.resources
 C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterUI\obj\Debug\net8.0-windows\UpdaterUI.GeneratedMSBuildEditorConfig.editorconfig
@@ -115,3 +113,6 @@ C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterUI\obj\D
 C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterUI\obj\Debug\net8.0-windows\UpdaterUI.pdb
 C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterUI\obj\Debug\net8.0-windows\UpdaterUI.genruntimeconfig.cache
 C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterUI\obj\Debug\net8.0-windows\ref\UpdaterUI.dll
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterUI\bin\Debug\net8.0-windows\Updater.dll
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterUI\bin\Debug\net8.0-windows\Updater.pdb
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterUI\obj\Debug\net8.0-windows\UpdaterUI.sourcelink.json

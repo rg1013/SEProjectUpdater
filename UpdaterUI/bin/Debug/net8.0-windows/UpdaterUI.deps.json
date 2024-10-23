@@ -737,18 +737,21 @@
         }
       },
       "System.Windows.Extensions/8.0.0": {},
-      "ActivityTracker/1.0.0": {
-        "runtime": {
-          "ActivityTracker.dll": {}
-        }
-      },
       "ActivityTrackerViewModel/1.0.0": {
         "dependencies": {
-          "ActivityTracker": "1.0.0",
-          "Microsoft.Windows.Compatibility": "8.0.10"
+          "Microsoft.Windows.Compatibility": "8.0.10",
+          "Updater": "1.0.0"
         },
         "runtime": {
           "ActivityTrackerViewModel.dll": {}
+        }
+      },
+      "Updater/1.0.0": {
+        "dependencies": {
+          "Microsoft.Windows.Compatibility": "8.0.10"
+        },
+        "runtime": {
+          "Updater.dll": {}
         }
       },
       "UpdaterViewModel/1.0.0": {
@@ -1156,12 +1159,12 @@
       "path": "system.windows.extensions/8.0.0",
       "hashPath": "system.windows.extensions.8.0.0.nupkg.sha512"
     },
-    "ActivityTracker/1.0.0": {
+    "ActivityTrackerViewModel/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
     },
-    "ActivityTrackerViewModel/1.0.0": {
+    "Updater/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
