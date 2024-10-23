@@ -1,0 +1,5 @@
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\ActivityTrackerViewModel\obj\Debug\net8.0\ActivityTrackerViewModel.csproj.AssemblyReference.cache
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\ActivityTrackerViewModel\obj\Debug\net8.0\ActivityTrackerViewModel.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\ActivityTrackerViewModel\obj\Debug\net8.0\ActivityTrackerViewModel.AssemblyInfoInputs.cache
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\ActivityTrackerViewModel\obj\Debug\net8.0\ActivityTrackerViewModel.AssemblyInfo.cs
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\ActivityTrackerViewModel\obj\Debug\net8.0\ActivityTrackerViewModel.csproj.CoreCompileInputs.cache

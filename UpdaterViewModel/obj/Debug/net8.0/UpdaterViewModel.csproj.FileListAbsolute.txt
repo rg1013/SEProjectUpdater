@@ -1,0 +1,11 @@
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterViewModel\bin\Debug\net8.0\UpdaterViewModel.deps.json
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterViewModel\bin\Debug\net8.0\UpdaterViewModel.dll
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterViewModel\bin\Debug\net8.0\UpdaterViewModel.pdb
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterViewModel\obj\Debug\net8.0\UpdaterViewModel.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterViewModel\obj\Debug\net8.0\UpdaterViewModel.AssemblyInfoInputs.cache
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterViewModel\obj\Debug\net8.0\UpdaterViewModel.AssemblyInfo.cs
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterViewModel\obj\Debug\net8.0\UpdaterViewModel.csproj.CoreCompileInputs.cache
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterViewModel\obj\Debug\net8.0\UpdaterViewModel.dll
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterViewModel\obj\Debug\net8.0\refint\UpdaterViewModel.dll
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterViewModel\obj\Debug\net8.0\UpdaterViewModel.pdb
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\UpdaterViewModel\obj\Debug\net8.0\ref\UpdaterViewModel.dll

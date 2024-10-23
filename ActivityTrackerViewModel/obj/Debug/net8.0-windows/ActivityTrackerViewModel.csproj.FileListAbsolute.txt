@@ -1,0 +1,15 @@
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\ActivityTrackerViewModel\bin\Debug\net8.0-windows\ActivityTrackerViewModel.deps.json
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\ActivityTrackerViewModel\bin\Debug\net8.0-windows\ActivityTrackerViewModel.dll
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\ActivityTrackerViewModel\bin\Debug\net8.0-windows\ActivityTrackerViewModel.pdb
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\ActivityTrackerViewModel\bin\Debug\net8.0-windows\ActivityTracker.dll
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\ActivityTrackerViewModel\bin\Debug\net8.0-windows\ActivityTracker.pdb
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\ActivityTrackerViewModel\obj\Debug\net8.0-windows\ActivityTrackerViewModel.csproj.AssemblyReference.cache
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\ActivityTrackerViewModel\obj\Debug\net8.0-windows\ActivityTrackerViewModel.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\ActivityTrackerViewModel\obj\Debug\net8.0-windows\ActivityTrackerViewModel.AssemblyInfoInputs.cache
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\ActivityTrackerViewModel\obj\Debug\net8.0-windows\ActivityTrackerViewModel.AssemblyInfo.cs
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\ActivityTrackerViewModel\obj\Debug\net8.0-windows\ActivityTrackerViewModel.csproj.CoreCompileInputs.cache
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\ActivityTrackerViewModel\obj\Debug\net8.0-windows\Activity.B08A12D8.Up2Date
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\ActivityTrackerViewModel\obj\Debug\net8.0-windows\ActivityTrackerViewModel.dll
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\ActivityTrackerViewModel\obj\Debug\net8.0-windows\refint\ActivityTrackerViewModel.dll
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\ActivityTrackerViewModel\obj\Debug\net8.0-windows\ActivityTrackerViewModel.pdb
+C:\Users\Garima Ranjan\source\repos\SoftwareEngineering2024-main\ActivityTrackerViewModel\obj\Debug\net8.0-windows\ref\ActivityTrackerViewModel.dll
