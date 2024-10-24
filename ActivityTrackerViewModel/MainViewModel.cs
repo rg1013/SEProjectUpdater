@@ -1,7 +1,18 @@
-﻿using System.ComponentModel;
+﻿/*************************************************************************************
+* Filename    = MainViewModel.cs
+*
+* Author      = N.Pawan Kumar
+*
+* Product     = Updater
+* 
+* Project     = Lab Monitoring Software
+*
+* Description = View Model for displaying available analyzers information on the UI
+**************************************************************************************/
+
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Threading;
-using ActivityTracker;
 
 namespace ActivityTrackerViewModel;
 
@@ -9,25 +20,18 @@ namespace ActivityTrackerViewModel;
 /// The ViewModel that serves as the data context for the MainWindow. It provides properties
 /// and commands that the view binds to and communicates changes via the INotifyPropertyChanged interface.
 ///</summary>
-///<summary>
-/// ViewModel part of the MVVM architecture that manages application data, logs, and notifications.
-///</summary>
 public class MainViewModel : INotifyPropertyChanged
 {
     private string _logDetails = "";
     private string _notificationMessage = "";
     private bool _notificationVisible = false;
-    private readonly ILogService _logService;
     private DispatcherTimer _timer; // Timer to auto-hide notifications
 
     ///<summary>
-    /// Initializes a new instance of the MainViewModel class with a specified log service.
+    /// Initializes a new instance of the MainViewModel class.
     ///</summary>
-    ///<param name="logService">The log service used for logging messages.</param>
-    public MainViewModel(ILogService logService)
+    public MainViewModel()
     {
-        _logService = logService;
-
         _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) }; // Notification shows for 5 seconds
         _timer.Tick += (sender, e) => { HideNotification(); };
     }
@@ -69,13 +73,12 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     ///<summary>
-    /// Appends a message to the log details and logs it using the external log service.
+    /// Appends a message to the log details.
     ///</summary>
-    ///<param name="message">The message to log.</param>
+    ///<param name="message">The message to append to the log.</param>
     public void UpdateLogDetails(string message)
     {
         LogDetails += "\n" + message;
-        _logService.LogMessage(message);
     }
 
     ///<summary>
@@ -101,14 +104,14 @@ public class MainViewModel : INotifyPropertyChanged
     ///<summary>
     /// Occurs when a property value changes.
     ///</summary>
-    public event PropertyChangedEventHandler PropertyChanged;
+    public event PropertyChangedEventHandler? PropertyChanged; // Nullable event handler
 
     ///<summary>
     /// Notifies listeners about property changes.
     ///</summary>
     ///<param name="propertyName">The name of the property that changed.</param>
-    protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName ?? string.Empty)); 
     }
 }
