@@ -10,4 +10,8 @@
     <PackageReference Include="Microsoft.Windows.Compatibility" Version="8.0.10" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ActivityTracker\ActivityTracker.csproj" />
+  </ItemGroup>
+
 </Project>

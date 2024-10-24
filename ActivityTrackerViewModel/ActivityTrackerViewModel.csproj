@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Updater\Updater.csproj" />
+    <ProjectReference Include="..\ActivityTracker\ActivityTracker.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-﻿namespace Updater;
+﻿namespace ActivityTracker;
 
 public interface ILogService
 {

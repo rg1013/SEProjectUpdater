@@ -1,24 +1,9 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Threading;
-using Updater;
+using ActivityTracker;
 
 namespace ActivityTrackerViewModel;
-
-///<summary>
-/// Implementation of ILogService that logs messages to a store or console.
-///</summary>
-public class LogService : ILogService
-{
-    ///<summary>
-    /// Logs a message to the console or a log store.
-    ///</summary>
-    ///<param name="message">The message to log.</param>
-    public void LogMessage(string message)
-    {
-        // Implementation for logging to a store or console
-    }
-}
 
 ///<summary>
 /// The ViewModel that serves as the data context for the MainWindow. It provides properties
@@ -42,6 +27,7 @@ public class MainViewModel : INotifyPropertyChanged
     public MainViewModel(ILogService logService)
     {
         _logService = logService;
+
         _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) }; // Notification shows for 5 seconds
         _timer.Tick += (sender, e) => { HideNotification(); };
     }
@@ -54,7 +40,7 @@ public class MainViewModel : INotifyPropertyChanged
         get => _logDetails;
         set {
             _logDetails = value;
-            OnPropertyChanged();
+            OnPropertyChanged(nameof(LogDetails));
         }
     }
 
@@ -66,7 +52,7 @@ public class MainViewModel : INotifyPropertyChanged
         get => _notificationMessage;
         set {
             _notificationMessage = value;
-            OnPropertyChanged();
+            OnPropertyChanged(nameof(NotificationMessage));
         }
     }
 
@@ -78,22 +64,8 @@ public class MainViewModel : INotifyPropertyChanged
         get => _notificationVisible;
         set {
             _notificationVisible = value;
-            OnPropertyChanged();
+            OnPropertyChanged(nameof(NotificationVisible));
         }
-    }
-
-    ///<summary>
-    /// Occurs when a property value changes.
-    ///</summary>
-    public event PropertyChangedEventHandler PropertyChanged;
-
-    ///<summary>
-    /// Notifies listeners about property changes.
-    ///</summary>
-    ///<param name="propertyName">The name of the property that changed.</param>
-    protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
     ///<summary>
@@ -124,5 +96,19 @@ public class MainViewModel : INotifyPropertyChanged
     {
         NotificationVisible = false;
         _timer.Stop();
+    }
+
+    ///<summary>
+    /// Occurs when a property value changes.
+    ///</summary>
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    ///<summary>
+    /// Notifies listeners about property changes.
+    ///</summary>
+    ///<param name="propertyName">The name of the property that changed.</param>
+    protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
