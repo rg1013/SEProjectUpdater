@@ -13,6 +13,8 @@ public class FileChangeNotifier : INotifyPropertyChanged
     private List<string> _movedFiles;
     private Timer _timer;
 
+    public event Action<string> MessageReceived;
+
     public FileChangeNotifier()
     {
         _createdFiles = new List<string>();
@@ -27,14 +29,14 @@ public class FileChangeNotifier : INotifyPropertyChanged
         set
         {
             _messageStatus = value;
-            OnPropertyChanged();
+            OnPropertyChanged(nameof(MessageStatus));
         }
     }
 
     private void StartMonitoring()
     {
         //Path to folder to monitor
-        string folderPath = @"C:\Users\harik\Downloads";
+        string folderPath = @"C:\temp";
         _fileWatcher = new FileSystemWatcher
         {
             Path = folderPath,
@@ -127,6 +129,7 @@ public class FileChangeNotifier : INotifyPropertyChanged
         {
             string v = message.ToString();
             MessageStatus = v;
+            MessageReceived?.Invoke(v);
         }
     }
 

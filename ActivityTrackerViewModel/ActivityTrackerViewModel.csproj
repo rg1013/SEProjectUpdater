@@ -8,11 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ActivityTracker\ActivityTracker.csproj" />
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="8.0.10" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Windows.Compatibility" Version="8.0.10" />
+    <ProjectReference Include="..\ActivityTracker\ActivityTracker.csproj" />
   </ItemGroup>
 
 </Project>
