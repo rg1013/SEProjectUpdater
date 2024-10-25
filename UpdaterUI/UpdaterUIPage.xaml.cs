@@ -27,7 +27,7 @@ public partial class UpdaterUIPage : Page
         _analyzerNotificationService = new FileChangeNotifier();
         _analyzerNotificationService.MessageReceived += OnMessageReceived;
 
-        ViewModel = new MainViewModel(new LogService());
+        ViewModel = new MainViewModel();
         DataContext = ViewModel;
     }
 

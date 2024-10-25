@@ -12,5 +12,5 @@ public class LogService : ILogService
     public void LogMessage(string message)
     {
         // Implementation for logging to a store or console
-    }
+    }   
 }
