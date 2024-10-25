@@ -2,8 +2,8 @@
 
 namespace ExampleAnalyzer1;
 
-public class CodeCoverageAnalysis: ITool
-{ 
+public class CodeCoverageAnalysis : ITool
+{
     public int Id { get; set; }
     public string Description { get; set; }
     public float? Version { get; set; }

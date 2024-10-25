@@ -1,6 +1,5 @@
 ﻿using System.Windows.Controls;
 using ActivityTrackerViewModel;
-using ActivityTracker;
 using UpdaterViewModel;
 using Updater;
 using System.Windows;

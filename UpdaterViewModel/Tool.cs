@@ -14,8 +14,11 @@ public class Tool : INotifyPropertyChanged
     {
         get => _id;
         set {
-            _id = value;
-            OnPropertyChanged("ID");
+            if (_id != value)
+            {
+                _id = value;
+                OnPropertyChanged("ID");
+            }
         }
     }
 
@@ -23,8 +26,11 @@ public class Tool : INotifyPropertyChanged
     {
         get => _version;
         set {
-            _version = value;
-            OnPropertyChanged("Version");
+            if (_version != value)
+            {
+                _version = value;
+                OnPropertyChanged("Version");
+            }
         }
     }
 
@@ -32,8 +38,11 @@ public class Tool : INotifyPropertyChanged
     {
         get => _description;
         set {
-            _description = value;
-            OnPropertyChanged("Description");
+            if (_description != value)
+            {
+                _description = value;
+                OnPropertyChanged("Description");
+            }
         }
     }
 
@@ -41,8 +50,11 @@ public class Tool : INotifyPropertyChanged
     {
         get => _deprecated;
         set {
-            _deprecated = value;
-            OnPropertyChanged("Deprecated");
+            if (_deprecated != value)
+            {
+                _deprecated = value;
+                OnPropertyChanged("Deprecated");
+            }
         }
     }
 
@@ -50,8 +62,11 @@ public class Tool : INotifyPropertyChanged
     {
         get => _createdBy;
         set {
-            _createdBy = value;
-            OnPropertyChanged("CreatedBy");
+            if (_createdBy != value)
+            {
+                _createdBy = value;
+                OnPropertyChanged("CreatedBy");
+            }
         }
     }
 

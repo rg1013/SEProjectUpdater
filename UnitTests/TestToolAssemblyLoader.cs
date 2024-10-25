@@ -9,6 +9,6 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace UnitTests;
-internal class TestLogService
+internal class TestToolAssemblyLoader
 {
 }
