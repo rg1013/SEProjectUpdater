@@ -3,20 +3,29 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Program", "Program\Program.csproj", "{6C2887AE-056A-4B61-BF2C-D911266C3426}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UI", "UI\UI.csproj", "{5A5B5310-19ED-4356-A020-3457232723E9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Network", "Network\Network.csproj", "{99AF4EA2-172E-4EE7-ADF7-4A7FEEA00204}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5A5B5310-19ED-4356-A020-3457232723E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A5B5310-19ED-4356-A020-3457232723E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A5B5310-19ED-4356-A020-3457232723E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A5B5310-19ED-4356-A020-3457232723E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99AF4EA2-172E-4EE7-ADF7-4A7FEEA00204}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99AF4EA2-172E-4EE7-ADF7-4A7FEEA00204}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99AF4EA2-172E-4EE7-ADF7-4A7FEEA00204}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99AF4EA2-172E-4EE7-ADF7-4A7FEEA00204}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{6C2887AE-056A-4B61-BF2C-D911266C3426}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6C2887AE-056A-4B61-BF2C-D911266C3426}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6C2887AE-056A-4B61-BF2C-D911266C3426}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6C2887AE-056A-4B61-BF2C-D911266C3426}.Release|Any CPU.Build.0 = Release|Any CPU
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8A72BA95-67DB-4E74-8388-AA280385C28E}
 	EndGlobalSection
 EndGlobal
