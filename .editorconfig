@@ -152,6 +152,7 @@ dotnet_public_api_analyzer.require_api_files = true
 dotnet_diagnostic.IDE0055.severity = warning
 dotnet_style_operator_placement_when_wrapping = beginning_of_line
 tab_width = 4
+end_of_line = crlf
 
 # CSharp code style settings:
 [*.cs]
@@ -209,7 +210,7 @@ csharp_space_after_comma = true:error
 csharp_space_after_dot = false:error
 csharp_space_after_keywords_in_control_flow_statements = true:error
 csharp_space_after_semicolon_in_for_statement = true:error
-csharp_space_around_binary_operators = before_and_after:error
+csharp_space_around_binary_operators = before_and_after
 csharp_space_around_declaration_statements = do_not_ignore:error
 csharp_space_before_colon_in_inheritance_clause = true::error
 csharp_space_before_comma = false:error
