@@ -11,16 +11,14 @@ public class Utils
     /// </summary>
     /// <param name="filePath">Path of file to read. </param>
     /// <returns>Filecontent as string, or null if file dne</returns>
-    static string? ReadFile(string filePath)
+    public static string? ReadFile(string filePath)
     {
         if (!File.Exists(filePath))
         {
             Debug.WriteLine("File not found. Please check the path and try again.");
             return null;
         }
-
         return File.ReadAllText(filePath);
-
     }
 
     /// <summary>
@@ -28,7 +26,7 @@ public class Utils
     /// </summary>
     /// <param name="filePath">Path of file</param>
     /// <param name="content">Content to write.</param>
-    static bool WriteToFile(string filePath, string content)
+    public static bool WriteToFile(string filePath, string content)
     {
         try
         {
@@ -42,19 +40,16 @@ public class Utils
         }
     }
 
-
-    /// <summary>
-    /// Serializes an object to its string representation.
+    /// <summary> Serializes an object to its string representation.
     /// </summary>
     /// <typeparam name="T">The type of the object to serialize.</typeparam>
     /// <param name="obj">The object to serialize.</param>
     /// <returns>A string representation of the serialized object.</returns>
-    static string SerializeObject<T>(T obj)
+    public static string SerializeObject<T>(T obj)
     {
         ISerializer serializer = new Serializer();
         return serializer.Serialize(obj);
     }
-
 
     /// <summary>
     /// Deserializes a string back to an object of specified type.
@@ -62,10 +57,36 @@ public class Utils
     /// <typeparam name="T">The type of the object to deserialize into.</typeparam>
     /// <param name="serializedData">The serialized string data.</param>
     /// <returns>An instance of the specified type.</returns>
-    static T DeserializeObject<T>(string serializedData)
+    public static T DeserializeObject<T>(string serializedData)
     {
         ISerializer serializer = new Serializer();
         return serializer.Deserialize<T>(serializedData);
     }
 
+    /// <summary>
+    /// Generates serialized packet containing metadata of files in a directory.
+    /// </summary>
+    /// <returns>Serialized packet containing metadata of files in a directory.</returns>
+    public static string SerializedMetadataPacket()
+    {
+        DirectoryMetadataGenerator metadataGenerator = new DirectoryMetadataGenerator();
+
+        if (metadataGenerator == null)
+        {
+            throw new Exception("Failed to create DirectoryMetadataGenerator");
+        }
+
+        List<FileMetadata>? metadata = metadataGenerator.GetMetadata();
+        if (metadata == null)
+        {
+            throw new Exception("Failed to get metadata");
+        }
+
+        string serializedMetadata = Utils.SerializeObject(metadata);
+        FileContent fileContent = new FileContent("metadata.json", serializedMetadata);
+        List<FileContent> fileContents = new List<FileContent> { fileContent };
+
+        DataPacket dataPacket = new DataPacket(DataPacket.PacketType.Metadata, fileContents);
+        return SerializeObject(dataPacket);
+    }
 }

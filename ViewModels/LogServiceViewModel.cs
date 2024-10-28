@@ -14,7 +14,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Threading;
 
-namespace ViewModelsDependencyDifferent;
+namespace ViewModels;
 
 ///<summary>
 /// The ViewModel that serves as the data context for the MainWindow. It provides properties

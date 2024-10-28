@@ -9,8 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ActivityTrackerViewModel\ViewModelsDependency.csproj" />
-    <ProjectReference Include="..\ViewModelsDependencyDifferent\ViewModelsDependencyDifferent.csproj" />
     <ProjectReference Include="..\ViewModels\ViewModels.csproj" />
   </ItemGroup>
 

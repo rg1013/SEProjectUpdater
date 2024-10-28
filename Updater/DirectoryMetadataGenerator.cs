@@ -16,15 +16,15 @@ namespace Updater
         /// Create metadata of directory
         /// </summary>
         /// <param name="directoryPath">Path of the directory</param>
-        public DirectoryMetadataGenerator(string directoryPath)
+        public DirectoryMetadataGenerator(string directoryPath = @"C:\Temp")
         {
             if (!Directory.Exists(directoryPath))
             {
-                Console.WriteLine($"Directory does not exist: {directoryPath}");
+                Debug.WriteLine($"Directory does not exist: {directoryPath}");
+                Directory.CreateDirectory(directoryPath);
             }
 
-            List<FileMetadata> metadata = CreateFileMetadata(directoryPath);
-            _metadata = metadata;
+            _metadata = CreateFileMetadata(directoryPath);
         }
 
 
@@ -41,22 +41,17 @@ namespace Updater
         /// <param name="directoryPath">Path of directory.</param>
         /// <param name="writeToFile">bool value to write metadata to file.</param>
         /// <returns>List of FileMetadata objects in the directory.</returns>
-        private static List<FileMetadata> CreateFileMetadata(string directoryPath)
+        private static List<FileMetadata> CreateFileMetadata(string directoryPath = @"C:\Temp")
         {
             List<FileMetadata> metadata = new List<FileMetadata>();
-            string metadataFilePath = Path.Combine(directoryPath, "metadata.json");
 
             foreach (string filePath in Directory.GetFiles(directoryPath))
             {
-                // Skip the metadata file itself
-                if (Path.GetFileName(filePath).Equals("metadata.json", StringComparison.OrdinalIgnoreCase))
-                    continue;
 
-                string fileHash = ComputeFileHash(filePath);
                 metadata.Add(new FileMetadata
                 {
                     FileName = Path.GetFileName(filePath),
-                    FileHash = fileHash
+                    FileHash = ComputeFileHash(filePath)
                 });
             }
 

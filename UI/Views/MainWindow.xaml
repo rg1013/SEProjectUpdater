@@ -153,11 +153,12 @@
         </Border>
 
         <!--Updater Page Requirement-->
-        <Frame x:Name="MainFrame" NavigationUIVisibility="Hidden" />
 
-        <Popup IsOpen="{Binding NotificationVisible}" Placement="Top" HorizontalAlignment="Right" Margin="0,10,10,0">
-            <Border Background="LightGray" Padding="5">
-                <TextBlock Text="{Binding NotificationMessage}" />
+        <Frame x:Name="MainFrame" NavigationUIVisibility="Hidden" />
+        
+        <Popup IsOpen="{Binding LogServiceViewModel.NotificationVisible}" Placement="Top" HorizontalAlignment="Center">
+            <Border Background="LightGray" BorderBrush="Black" BorderThickness="2" Padding="5">
+                <TextBlock Text="{Binding LogServiceViewModel.NotificationMessage}" />
             </Border>
         </Popup>
     </Grid>

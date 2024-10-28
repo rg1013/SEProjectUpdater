@@ -9,6 +9,8 @@ namespace Updater
     public class DirectoryMetadataComparer
     {
         private Dictionary<int, List<object>>? _differences;
+        private List<string> _uniqueServerFiles = new List<string>();
+        private List<string> _uniqueClientFiles = new List<string>();
 
 
         /// <summary>
@@ -21,6 +23,16 @@ namespace Updater
             _differences = CompareMetadata(metadataA, metadataB);
         }
 
+        public List<string> GetUniqueServerFiles()
+        {
+            return _uniqueServerFiles;
+        }
+
+
+        public List<string> GetUniqueClientFiles()
+        {
+            return _uniqueServerFiles;
+        }
 
         /// <summary>
         /// Get _differences
@@ -38,7 +50,7 @@ namespace Updater
         /// <param name="metadataA">Dir. A's metadata</param>
         /// <param name="metadataB">Dir. B's metadata</param>
         /// <returns>Dictionary containing differences, </returns>
-        private static Dictionary<int, List<object>> CompareMetadata(List<FileMetadata> metadataA, List<FileMetadata> metadataB)
+        private Dictionary<int, List<object>> CompareMetadata(List<FileMetadata> metadataA, List<FileMetadata> metadataB)
         {
             Dictionary<int, List<object>> differences = new Dictionary<int, List<object>>
         {
@@ -80,7 +92,7 @@ namespace Updater
         /// <param name="hashToFileA">Dir. A's Hash to file map</param>
         /// <param name="differences">differences dictionary</param>
         /// <returns> Differences dictionary</returns>
-        private static void CheckForRenamesAndMissingFiles(List<FileMetadata> metadataB, Dictionary<string, string> hashToFileA, Dictionary<int, List<object>> differences)
+        private void CheckForRenamesAndMissingFiles(List<FileMetadata> metadataB, Dictionary<string, string> hashToFileA, Dictionary<int, List<object>> differences)
         {
             foreach (FileMetadata fileB in metadataB)
             {
@@ -103,6 +115,7 @@ namespace Updater
                     { "FileName", fileB.FileName },
                     { "FileHash", fileB.FileHash }
                 });
+                    _uniqueClientFiles.Add(fileB.FileName);
                 }
             }
         }
@@ -115,7 +128,7 @@ namespace Updater
         /// <param name="hashToFileB">Dir. B's Hash to file map</param>
         /// <param name="differences">Differences dictionary</param>
         /// <returns> Differences dictionary</returns>
-        private static void CheckForOnlyInAFiles(List<FileMetadata> metadataA, Dictionary<string, string> hashToFileB, Dictionary<int, List<object>> differences)
+        private void CheckForOnlyInAFiles(List<FileMetadata> metadataA, Dictionary<string, string> hashToFileB, Dictionary<int, List<object>> differences)
         {
             foreach (FileMetadata fileA in metadataA)
             {
@@ -126,9 +139,9 @@ namespace Updater
                     { "FileName", fileA.FileName },
                     { "FileHash", fileA.FileHash }
                 });
+                    _uniqueServerFiles.Add(fileA.FileName);
                 }
             }
         }
-
     }
 }
