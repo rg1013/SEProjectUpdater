@@ -14,7 +14,7 @@ public class ServerProgram
         ICommunicator server = CommunicationFactory.GetCommunicator(false);
 
         // Starting the server
-        string result = server.Start("127.0.0.1", "12345");
+        string result = server.Start();
         Console.WriteLine($"Server started on {result}");
 
         // Subscribing the "ClientMetadataHandler" for handling notifications
