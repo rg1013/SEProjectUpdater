@@ -1,21 +1,25 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace Updater;
 
+[Serializable]
 public class FileContent
 {
-    public string? FileName { get; set; }
-    public string? SerializedContent { get; set; }
+    // Parameterless constructor is required for XML serialization
+    public FileContent() { }
 
     public FileContent(string? fileName, string? serializedContent)
     {
         FileName = fileName;
         SerializedContent = serializedContent;
     }
+
+    [XmlElement("FileName")]
+    public string? FileName { get; set; }
+
+    [XmlElement("SerializedContent")]
+    public string? SerializedContent { get; set; }
 
     public override string ToString()
     {

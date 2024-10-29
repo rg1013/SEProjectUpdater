@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Network\Network.csproj" />
+    <ProjectReference Include="..\Updater\Updater.csproj" />
   </ItemGroup>
 
 </Project>

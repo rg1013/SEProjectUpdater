@@ -1,168 +1,33 @@
-using Networking.Queues;
-using Networking.Sockets;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
+using System.Diagnostics;
+using System.Text;
 using System.Threading;
 
 namespace Networking.Communication
 {
     public class CommunicatorServer : ICommunicator
     {
-        // initialize the sending queue and receiving queue
-        private readonly SendingQueue _sendingQueue = new();
-        private readonly ReceivingQueue _receivingQueue = new();
+        private TcpListener listener;
+        private Dictionary<string, TcpClient> clients = new();
+        private Dictionary<string, INotificationHandler> handlers = new();
 
-        // declare all the threads
-        private readonly SendQueueListenerServer
-            _sendQueueListenerServer;
-        private readonly ReceiveQueueListener _receiveQueueListener;
-
-        // tcp listener to listen for client connect requests
-        private TcpListener _tcpClientConnectRequestListener;
-
-        // map to store the sockets of the clients to send data
-        private readonly Dictionary<string, TcpClient>
-            _clientIdToClientSocket = new();
-
-        // this map will store the socket listeners, one socket
-        // listener listening to one client
-        private readonly Dictionary<string, SocketListener> 
-            _clientIdToSocketListener = new();
-
-        // map to store the notification handlers of subscribed modules
-        private readonly Dictionary<string, INotificationHandler> 
-            _moduleToNotificationHanderMap = new();
-
-        // this thread will be used to accept client requests
-        private readonly Thread _clientConnectReuqestAcceptorThread;
-
-        // boolean to tell whether thread is running or stopped
-        private bool _runClientConnectReuqestAcceptorThread;
-
-        /// <summary>
-        /// Constructor finds the ip address and port of the current
-        /// machine, and initialize the tcp listener on that IP and
-        /// port, and initializes all threads.
-        /// </summary>
-        public CommunicatorServer()
+        public string Start(string serverIP = null, string serverPort = null)
         {
-            // SendQueueListenerServer listens to the sending queue and
-            // sends the packets whenever they comes into the queue
-            // it also notifies all modules when a client disconnects
-            _sendQueueListenerServer = new SendQueueListenerServer(
-                _sendingQueue, _clientIdToClientSocket, 
-                _moduleToNotificationHanderMap);
+            IPAddress ip = IPAddress.Parse(FindIpAddress());
+            int port = FindFreePort(ip);
+            listener = new TcpListener(ip, port);
+            listener.Start();
+            Console.WriteLine($"Server started at {ip} {port}...");
 
-            // receive queue listener listens to the receiving queue
-            // and notifies the respective module whenever data for
-            // that module comes into the receiving queue
-            _receiveQueueListener = new ReceiveQueueListener(
-                _moduleToNotificationHanderMap, _receivingQueue);
+            // Start listening for clients
+            ThreadPool.QueueUserWorkItem(AcceptClients);
 
-            // this thread listens to connect requests from clients
-            _clientConnectReuqestAcceptorThread = new Thread(
-                AcceptClientConnectRequests);
+            return $"{serverIP}:{serverPort}";
         }
 
-        /// <summary>
-        /// Starts the tcp client connect request listener, and starts
-        /// all threads. The function arguments are not requred on the
-        /// server side, give null on server side.
-        /// </summary>
-        /// <param name="serverIP">
-        /// Required only on client side. On server side give null.
-        /// </param>
-        /// <param name="serverPort">
-        /// Required only on client side. On server side give null.
-        /// </param>
-        /// <returns>
-        ///  If success then returns the address of the server as a 
-        ///  string of "IP:Port", else returns string "failure"
-        /// </returns>
-        public string Start(string? serverIP = null,
-            string? serverPort = null)
-        {
-            Trace.WriteLine("[Networking] " +
-                "CommunicatorServer.Start() function called.");
-            try
-            {
-                // find ip address and port of the current machine and
-                // initialize and start tcp client connect request
-                // listener on this ip address and port
-                IPAddress ip = IPAddress.Parse(FindIpAddress());
-                int port = FindFreePort(ip);
-                _tcpClientConnectRequestListener = new TcpListener(
-                    IPAddress.Any, port);
-                _tcpClientConnectRequestListener.Start();
-
-                // start all threads
-                _sendQueueListenerServer.Start();
-                _receiveQueueListener.Start();
-                _runClientConnectReuqestAcceptorThread = true;
-                _clientConnectReuqestAcceptorThread.Start();
-
-                Trace.WriteLine("[Networking] CommunicatorServer " +
-                    "started on IP: " + ip + " and Port: "  + port);
-                return (ip + ":" + port);
-            }
-            catch (Exception e)
-            {
-                Trace.WriteLine("[Networking] Error in " +
-                    "CommunicatorServer.Start(): " + e.Message);
-                return "failure";
-            }
-        }
-
-        /// <summary>
-        /// Stops listening to client connect requests and
-        /// stops all threads. And clears the queues.
-        /// </summary>
-        /// <returns> void </returns>
-        public void Stop()
-        {
-            Trace.WriteLine("[Networking] CommunicatorServer.Stop()" +
-                " function called.");
-            try
-            {
-                // stop the client connect requests acceptor thread
-                _runClientConnectReuqestAcceptorThread = false;
-
-                // stop listening to the clients
-                foreach (var socketListener in
-                    _clientIdToSocketListener.Values)
-                {
-                    socketListener.Stop();
-                }
-
-                // stop all running threads
-                _tcpClientConnectRequestListener.Stop();
-                _sendQueueListenerServer.Stop();
-                _receiveQueueListener.Stop();
-
-                // clear the queues
-                _sendingQueue.Clear();
-                _receivingQueue.Clear();
-
-                Trace.WriteLine("[Networking] CommunicatorServer " +
-                    "stopped.");
-            }
-            catch (Exception e)
-            {
-                Trace.WriteLine("[Networking] Error in " +
-                    "CommunicatorServer.Stop(): " + e.Message);
-            }
-        }
-
-        /// <summary>
-        /// Finds IP4 address of the current machine which does not 
-        /// ends with 1
-        /// </summary>
-        /// <returns>
-        /// IP address of the current machine as a string
-        /// </returns>
         private static string FindIpAddress()
         {
             Trace.WriteLine("[Networking] " +
@@ -177,7 +42,7 @@ namespace Networking.Communication
                 foreach (IPAddress ipAddress in host.AddressList)
                 {
                     // check if the address is IPv4 address
-                    if (ipAddress.AddressFamily == 
+                    if (ipAddress.AddressFamily ==
                         AddressFamily.InterNetwork)
                     {
                         string address = ipAddress.ToString();
@@ -222,7 +87,7 @@ namespace Networking.Communication
                 tcpListener.Start();
 
                 // return the port number of the tcp listener
-                int port = 
+                int port =
                     ((IPEndPoint)tcpListener.LocalEndpoint).Port;
                 tcpListener.Stop();
                 return port;
@@ -236,231 +101,108 @@ namespace Networking.Communication
             }
         }
 
-        /// <summary>
-        /// Accepts the connect requests from clients.
-        /// </summary>
-        /// <returns> void </returns>
-        private void AcceptClientConnectRequests()
-        {
-            Trace.WriteLine("[Networking] CommunicatorServer." +
-                "AcceptClientConnectRequests() function called.");
-            while (_runClientConnectReuqestAcceptorThread)
-            {
-                try
-                {
-                    // accept client connect request, it will return
-                    // the socket which can be used to communicate
-                    // with the client
-                    TcpClient clientSocket = 
-                        _tcpClientConnectRequestListener.
-                        AcceptTcpClient();
 
-                    // notify all "subscribed" modules that a new
-                    // client has joined
-                    foreach (var moduleToNotificationHandler in 
-                        _moduleToNotificationHanderMap)
-                    {
-                        string module = 
-                            moduleToNotificationHandler.Key;
-                        var notificationHandler = 
-                            moduleToNotificationHandler.Value;
-                        notificationHandler.OnClientJoined(
-                            clientSocket);
-                        Trace.WriteLine("[Networking] Notifed " +
-                            "module: " + module + " that new client" +
-                            " has joined.");
-                    }
-                }
-                catch (SocketException e)
+        private void AcceptClients(object state)
+        {
+            while (true)
+            {
+                TcpClient client = listener.AcceptTcpClient();
+
+                // Notify handlers
+                foreach (var handler in handlers.Values)
                 {
-                    if (e.SocketErrorCode == SocketError.Interrupted)
-                    {
-                        Trace.WriteLine("[Networking] Error in " +
-                            "CommunicatorServer." +
-                            "AcceptClientConnectRequests(): client " +
-                            "connect request tcp listener socket " +
-                            "has been closed.");
-                    }
-                    else
-                    {
-                        Trace.WriteLine("[Networking] SocketException "
-                            + "in CommunicatorServer." +
-                            "AcceptClientConnectRequests(): " + 
-                            e.Message);
-                    }
+                    handler.OnClientJoined(client);
                 }
-                catch (Exception e)
+
+                // Start listening for data from the client
+                ThreadPool.QueueUserWorkItem(ReceiveData, client);
+            }
+        }
+
+        private void ReceiveData(object clientObj)
+        {
+            TcpClient client = (TcpClient)clientObj;
+            string clientId = client.Client.RemoteEndPoint.ToString();
+
+            while (true)
+            {
+                NetworkStream stream = client.GetStream();
+                byte[] buffer = new byte[1024];
+                int bytesRead = stream.Read(buffer, 0, buffer.Length);
+                if (bytesRead == 0)
                 {
-                    Trace.WriteLine("[Networking] Error in " +
-                        "CommunicatorServer." +
-                        "AcceptClientConnectRequests(): " + 
-                        e.Message);
+                    Console.WriteLine($"Client {clientId} disconnected.");
+                    clients.Remove(clientId);
+
+                    foreach (var handler in handlers.Values)
+                    {
+                        handler.OnClientLeft(clientId);
+                    }
+                    break;
+                }
+
+                string receivedData = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                string[] packetParts = receivedData.Split(new[] { ':' }, 2);
+                if (packetParts.Length == 2)
+                {
+                    string module = packetParts[0];
+                    string data = packetParts[1];
+
+                    if (handlers.TryGetValue(module, out INotificationHandler handler))
+                    {
+                        handler.OnDataReceived(data);
+                    }
                 }
             }
         }
 
-        /// <summary>
-        /// This function is to be called by the Dashboard module on
-        /// the server side when a new client joins. It adds the client
-        /// socket to the map and starts listening to the client.
-        /// </summary>
-        /// <param name="clientId"> The client Id. </param>
-        /// <param name="socket">
-        /// The socket which is connected to the client.
-        /// </param>
-        /// <returns> void </returns>
+        public void Send(string serializedData, string moduleOfPacket, string? destination)
+        {
+            string packet = $"{moduleOfPacket}:{serializedData}";
+            byte[] buffer = Encoding.UTF8.GetBytes(packet);
+
+            if (destination == null)
+            {
+                // Broadcast to all clients
+                foreach (var client in clients.Values)
+                {
+                    client.GetStream().Write(buffer, 0, buffer.Length);
+                }
+            }
+            else if (clients.TryGetValue(destination, out TcpClient client))
+            {
+                // Send to a specific client
+                client.GetStream().Write(buffer, 0, buffer.Length);
+            }
+        }
+
+        public void Subscribe(string moduleName, INotificationHandler notificationHandler, bool isHighPriority = false)
+        {
+            handlers[moduleName] = notificationHandler;
+        }
+
+        public void Stop()
+        {
+            listener.Stop();
+            foreach (var client in clients.Values)
+            {
+                client.Close();
+            }
+        }
+
         public void AddClient(string clientId, TcpClient socket)
         {
-            Trace.WriteLine("[Networking] " +
-                "CommunicatorServer.AddClient() function called.");
-            try
-            {
-                // store the socket of the client in the respective map
-                // and create a socket listener for that client
-                // and add the socket listener to the respective map
-                // and start the socket listener
-                _clientIdToClientSocket[clientId] = socket;
-                SocketListener socketListener = new(
-                    _receivingQueue, socket);
-                _clientIdToSocketListener[clientId] = socketListener;
-                socketListener.Start();
-                Trace.WriteLine("[Networking] Client added with " +
-                "clientID: " + clientId);
-            }
-            catch (Exception e)
-            {
-                Trace.WriteLine("[Networking] Error in " +
-                    "CommunicatorServer.AddClient(): " + e.Message);
-            }
+            clients[clientId] = socket;
         }
 
-        /// <summary>
-        /// This function is to be called by the Dashboard module on
-        /// the server side when a client leaves. It will remove the 
-        /// client from the networking modules map on the server.
-        /// </summary>
-        /// <param name="clientId"> The client Id. </param>
-        /// <returns> void </returns>
         public void RemoveClient(string clientId)
         {
-            Trace.WriteLine("[Networking] " +
-                "CommunicatorServer.RemoveClient() function called.");
-            try
-            {
-                // stop listening to this client and remove the client
-                // socket listener from the respective map
-                SocketListener socketListener =
-                    _clientIdToSocketListener[clientId];
-                socketListener.Stop();
-                _clientIdToSocketListener.Remove(clientId);
-
-                // close the connection to the client and remove the
-                // client socket from the respective map
-                TcpClient socket = _clientIdToClientSocket[clientId];
-                socket.GetStream().Close();
-                socket.Close();
-                _clientIdToClientSocket.Remove(clientId);
-                Trace.WriteLine("[Networking] Client removed with " +
-                    "clientID: " + clientId);
-            }
-            catch (Exception e)
-            {
-                Trace.WriteLine("[Networking] Error in " +
-                    "CommunicatorServer.RemoveClient(): " + e.Message);
-            }
+            clients.Remove(clientId);
         }
 
-        /// <summary>
-        /// Sends data to a particular client if client id given in
-        /// the destination argument, otherwise broadcasts data to
-        /// all clients if destination null.
-        /// </summary>
-        /// <param name="serializedData">
-        /// The serialzed data to be sent to the client(s).
-        /// </param>
-        /// <param name="moduleName"> 
-        /// Name of module sending the data.
-        /// </param>
-        /// <param name="destination">
-        /// Client Id of the client to which you want to send the data.
-        /// To broadcast to all clients give null in destination.
-        /// </param>
-        /// <returns> void </returns>
-        public void Send(string serializedData, string moduleName,
-            string? destination)
+        public Dictionary<string, TcpClient> GetClientList()
         {
-            Trace.WriteLine("[Networking] CommunicatorServer.Send()" +
-                " function called.");
-
-            // check if destination is not null then it must be id of
-            // a client, then check if the client id is present in our
-            // map or not, if not then print trace message and return
-            if (destination != null)
-            {
-                if (!_clientIdToClientSocket.ContainsKey(destination))
-                {
-                    Trace.WriteLine("[Networking] Sending Falied. " +
-                        "Client with ID: " + destination + " does " +
-                        "not exist in the room!");
-                    return;
-                }
-            }
-            Packet packet = new(
-                serializedData, destination, moduleName);
-            _sendingQueue.Enqueue(packet);
-            Trace.WriteLine("[Networking] SendQueue.Enqueued called " +
-                    "for data from module: " + moduleName +
-                    " for destination: " + destination);
-        }
-
-        /// <summary>
-        /// Other modules can subscribe using this function to be able
-        /// to send data. And be notified when data is received, and
-        /// when a client joins, and when a client leaves.
-        /// </summary>
-        /// <param name="moduleName"> Name of the module. </param>
-        /// <param name="notificationHandler">
-        /// Module implementation of the INotificationHandler.
-        /// </param>
-        /// <param name="isHighPriority">
-        /// Boolean telling whether module's data is high priority
-        /// or low priority.
-        /// </param>
-        /// <returns> void </returns>
-        public void Subscribe(string moduleName, INotificationHandler 
-            notificationHandler, bool isHighPriority)
-        {
-            Trace.WriteLine("[Networking] " +
-                "CommunicatorServer.Subscribe() function called.");
-            try
-            {
-                // store the notification handler of the module in our
-                // map
-                _moduleToNotificationHanderMap.Add(
-                    moduleName, notificationHandler);
-
-                // sending queue implements priority queues so we need
-                // to register the priority of the module
-                _sendingQueue.RegisterModule(
-                    moduleName, isHighPriority);
-
-                Trace.WriteLine("[Networking] Module: " + moduleName +
-                    " subscribed with priority [True for high/False" +
-                    " for low]: " + isHighPriority.ToString());
-            }
-            catch (Exception e)
-            {
-                Trace.WriteLine("[Networking] Error in " +
-                    "CommunicatorServer.Subscribe(): " + e.Message);
-            }
-        }
-
-        /// <summary>
-        /// Returns a dictionary of all clients connected to the server.
-        /// </summary>
-        /// <returns>Dictionary of all clients connected to the server.</returns>
-        public Dictionary<string, TcpClient> GetClientList(){ 
-            return _clientIdToClientSocket;
+            return clients;
         }
     }
 }

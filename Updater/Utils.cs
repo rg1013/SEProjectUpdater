@@ -83,10 +83,13 @@ public class Utils
         }
 
         string serializedMetadata = Utils.SerializeObject(metadata);
+        Console.WriteLine(serializedMetadata);
         FileContent fileContent = new FileContent("metadata.json", serializedMetadata);
         List<FileContent> fileContents = new List<FileContent> { fileContent };
 
         DataPacket dataPacket = new DataPacket(DataPacket.PacketType.Metadata, fileContents);
+        Console.WriteLine(dataPacket);
+        Console.WriteLine(Utils.SerializeObject(dataPacket));
         return SerializeObject(dataPacket);
     }
 }

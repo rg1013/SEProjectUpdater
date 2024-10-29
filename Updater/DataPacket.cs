@@ -1,65 +1,55 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Xml.Serialization;
 
-namespace Updater
+namespace Updater;
+
+[Serializable]
+public class DataPacket
 {
-    public class DataPacket
+    public enum PacketType
     {
-        public enum PacketType
-        {
-            Metadata, // single file
-            Differences, // multiple files
-            ClientFiles, // multiple files
-            Broadcast // multiple files
-        }
+        Metadata,      // single file
+        Differences,   // multiple files
+        ClientFiles,   // multiple files
+        Broadcast      // multiple files
+    }
 
-        private PacketType _packetType;
-        private List<FileContent>? _fileContentList;
+    public DataPacket() { }
 
-        // Constructor for multiple files.
-        public DataPacket(PacketType packetType, List<FileContent> fileContents)
-        {
-            _packetType = packetType;
-            _fileContentList = fileContents;
-        }
+    // Constructor for multiple files.
+    public DataPacket(PacketType packetType, List<FileContent> fileContents)
+    {
+        DataPacketType = packetType;
+        FileContentList = fileContents ?? new List<FileContent>();
+    }
 
-        public PacketType GetPacketType()
-        {
-            return _packetType;
-        }
+    [XmlElement("PacketType")]
+    public PacketType DataPacketType { get; set; }
 
-        public void SetPacketType(PacketType packetType)
-        {
-            _packetType = packetType;
-        }
+    [XmlArray("FileContents")]
+    [XmlArrayItem("FileContent")]
+    public List<FileContent> FileContentList { get; set; } = new List<FileContent>();
 
-        public List<FileContent> GetFileContentList()
+    public override string ToString()
+    {
+        StringBuilder formattedOutput = new StringBuilder();
+        formattedOutput.AppendLine($"Packet Type: {DataPacketType}");
+
+        if (FileContentList.Count > 0)
         {
-            if (_fileContentList == null)
+            formattedOutput.AppendLine("Multiple Files:");
+            foreach (FileContent file in FileContentList)
             {
-                throw new InvalidOperationException("File content list is null.");
+                formattedOutput.AppendLine(file.ToString()); // Assuming FileContent has a ToString method
             }
-            return _fileContentList;
         }
-
-        public override string ToString()
+        else
         {
-            StringBuilder formattedOutput = new StringBuilder();
-            formattedOutput.AppendLine($"Packet Type: {_packetType}");
-
-            if (_fileContentList != null && _fileContentList.Count > 0)
-            {
-                formattedOutput.AppendLine("Multiple Files:");
-                foreach (FileContent file in _fileContentList)
-                {
-                    formattedOutput.AppendLine(file.ToString()); // Assuming FileContent has a ToString method
-                }
-            }
-
-            return formattedOutput.ToString();
+            formattedOutput.AppendLine("No files in the packet.");
         }
+
+        return formattedOutput.ToString();
     }
 }
