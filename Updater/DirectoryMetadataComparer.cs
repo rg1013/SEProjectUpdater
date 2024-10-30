@@ -1,146 +1,147 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Xml.Serialization;
 
-namespace Updater;
-
-public class DirectoryMetadataComparer
+namespace Updater
 {
-    private Dictionary<int, List<object>>? _differences;
-    private List<string> _uniqueServerFiles = new List<string>();
-    private List<string> _uniqueClientFiles = new List<string>();
-
-
-    /// <summary>
-    /// Initialize new instance. 
-    /// </summary>
-    /// <param name="metadataA">Dir. A's metadata</param>
-    /// <param name="metadataB">Dir. B's metadata</param>
-    public DirectoryMetadataComparer(List<FileMetadata> metadataA, List<FileMetadata> metadataB)
+    [Serializable]
+    [XmlRoot("ArrayOfMetadataDifference")]
+    public class DirectoryMetadataComparer
     {
-        _differences = CompareMetadata(metadataA, metadataB);
-    }
+        [XmlElement("MetadataDifference")]
+        public List<MetadataDifference> Differences { get; private set; } = new List<MetadataDifference>();
 
-    public List<string> GetUniqueServerFiles()
-    {
-        return _uniqueServerFiles;
-    }
+        // Properties for storing unique files in server and client directories
+        [XmlElement("UniqueServerFiles")]
+        public List<string> UniqueServerFiles { get; private set; } = new List<string>();
+        [XmlElement("UniqueClientFiles")]
 
+        public List<string> UniqueClientFiles { get; private set; } = new List<string>();
 
-    public List<string> GetUniqueClientFiles()
-    {
-        return _uniqueServerFiles;
-    }
+  
+        // Parameterless constructor for XML serialization
+        public DirectoryMetadataComparer() { }
 
-    /// <summary>
-    /// Get _differences
-    /// </summary>
-    /// <returns>Dictionary containing differences between metadata of dir. A and B</returns>
-    public Dictionary<int, List<object>>? GetDifferences()
-    {
-        return _differences;
-    }
-
-
-    /// <summary>
-    /// Compares and generate difference between a dir. metadata pair
-    /// </summary>
-    /// <param name="metadataA">Dir. A's metadata</param>
-    /// <param name="metadataB">Dir. B's metadata</param>
-    /// <returns>Dictionary containing differences, </returns>
-    private Dictionary<int, List<object>> CompareMetadata(List<FileMetadata> metadataA, List<FileMetadata> metadataB)
-    {
-        Dictionary<int, List<object>> differences = new Dictionary<int, List<object>>
-    {
-        { -1, new List<object>() }, // In B but not in A
-        { 0, new List<object>() },  // Files with same hash but different names
-        { 1, new List<object>() }   // In A but not in B
-    };
-
-        Dictionary<string, string> hashToFileA = CreateHashToFileDictionary(metadataA);
-        Dictionary<string, string> hashToFileB = CreateHashToFileDictionary(metadataB);
-
-        CheckForRenamesAndMissingFiles(metadataB, hashToFileA, differences);
-        CheckForOnlyInAFiles(metadataA, hashToFileB, differences);
-
-        return differences;
-    }
-
-
-    /// <summary>
-    /// Create a map from filehash to filename
-    /// </summary>
-    /// <param name="metadata">list of metadata.</param>
-    /// <returns>Dictionary containing mapping.</returns>
-    private static Dictionary<string, string> CreateHashToFileDictionary(List<FileMetadata> metadata)
-    {
-        var hashToFile = new Dictionary<string, string>();
-        foreach (var file in metadata)
+        /// <summary>
+        /// Initialize new instance. 
+        /// </summary>
+        /// <param name="metadataA">Dir. A's metadata</param>
+        /// <param name="metadataB">Dir. B's metadata</param>
+        public DirectoryMetadataComparer(List<FileMetadata> metadataA, List<FileMetadata> metadataB)
         {
-            hashToFile[file.FileHash] = file.FileName;
+            CompareMetadata(metadataA, metadataB);
         }
-        return hashToFile;
-    }
 
-
-    /// <summary>
-    /// Checks for files in directory B that have been renamed or missing in directory A.
-    /// </summary>
-    /// <param name="metadataB">Dir. B's metadata.</param>
-    /// <param name="hashToFileA">Dir. A's Hash to file map</param>
-    /// <param name="differences">differences dictionary</param>
-    /// <returns> Differences dictionary</returns>
-    private void CheckForRenamesAndMissingFiles(List<FileMetadata> metadataB, Dictionary<string, string> hashToFileA, Dictionary<int, List<object>> differences)
-    {
-        foreach (FileMetadata fileB in metadataB)
+        /// <summary>
+        /// Compares and generates differences between a directory's metadata pairs.
+        /// </summary>
+        /// <param name="metadataA">Dir. A's metadata</param>
+        /// <param name="metadataB">Dir. B's metadata</param>
+        private void CompareMetadata(List<FileMetadata> metadataA, List<FileMetadata> metadataB)
         {
-            if (hashToFileA.ContainsKey(fileB.FileHash))
+            // Initialize differences for three cases
+            Differences.Add(new MetadataDifference { Key = "-1", Value = new List<FileDetail>() }); // In B but not in A
+            Differences.Add(new MetadataDifference { Key = "0", Value = new List<FileDetail>() });  // Files with same hash but different names
+            Differences.Add(new MetadataDifference { Key = "1", Value = new List<FileDetail>() });    // In A but not in B
+
+            var hashToFileA = CreateHashToFileDictionary(metadataA);
+            var hashToFileB = CreateHashToFileDictionary(metadataB);
+
+            CheckForRenamesAndMissingFiles(metadataB, hashToFileA);
+            CheckForOnlyInAFiles(metadataA, hashToFileB);
+        }
+
+        /// <summary>
+        /// Create a map from file hash to filename.
+        /// </summary>
+        /// <param name="metadata">List of metadata.</param>
+        /// <returns>List of key-value pairs containing the mapping.</returns>
+        private static List<KeyValuePair<string, string>> CreateHashToFileDictionary(List<FileMetadata> metadata)
+        {
+            return metadata.Select(file => new KeyValuePair<string, string>(file.FileHash, file.FileName)).ToList();
+        }
+
+        /// <summary>
+        /// Checks for files in directory B that have been renamed or are missing in directory A.
+        /// </summary>
+        /// <param name="metadataB">Dir. B's metadata.</param>
+        /// <param name="hashToFileA">List of key-value pairs mapping hash to filename in A.</param>
+        private void CheckForRenamesAndMissingFiles(List<FileMetadata> metadataB, List<KeyValuePair<string, string>> hashToFileA)
+        {
+            foreach (var fileB in metadataB)
             {
-                if (hashToFileA[fileB.FileHash] != fileB.FileName)
+                var existingFile = hashToFileA.FirstOrDefault(kvp => kvp.Key == fileB.FileHash);
+                if (existingFile.Key != null)
                 {
-                    differences[0].Add(new Dictionary<string, string>
+                    if (existingFile.Value != fileB.FileName)
+                    {
+                        Differences.First(d => d.Key == "0").Value.Add(new FileDetail
+                        {
+                            RenameFrom = fileB.FileName,
+                            RenameTo = existingFile.Value,
+                            FileHash = fileB.FileHash
+                        });
+                    }
+                }
+                else
                 {
-                    { "RenameFrom", fileB.FileName },
-                    { "RenameTo", hashToFileA[fileB.FileHash] },
-                    { "FileHash", fileB.FileHash }
-                });
+                    Differences.First(d => d.Key == "-1").Value.Add(new FileDetail
+                    {
+                        FileName = fileB.FileName,
+                        FileHash = fileB.FileHash
+                    });
+                    UniqueClientFiles.Add(fileB.FileName);
                 }
             }
-            else
+        }
+
+        /// <summary>
+        /// Checks for files in directory A that are missing in directory B.
+        /// </summary>
+        /// <param name="metadataA">Dir. A's metadata</param>
+        /// <param name="hashToFileB">List of key-value pairs mapping hash to filename in B.</param>
+        private void CheckForOnlyInAFiles(List<FileMetadata> metadataA, List<KeyValuePair<string, string>> hashToFileB)
+        {
+            foreach (var fileA in metadataA)
             {
-                differences[-1].Add(new Dictionary<string, string>
-            {
-                { "FileName", fileB.FileName },
-                { "FileHash", fileB.FileHash }
-            });
-                _uniqueClientFiles.Add(fileB.FileName);
+                if (!hashToFileB.Any(kvp => kvp.Key == fileA.FileHash))
+                {
+                    Differences.First(d => d.Key == "1").Value.Add(new FileDetail
+                    {
+                        FileName = fileA.FileName,
+                        FileHash = fileA.FileHash
+                    });
+                    UniqueServerFiles.Add(fileA.FileName);
+                }
             }
         }
     }
 
-
-    /// <summary>
-    /// Checks for files in directory A that are missing in directory B.
-    /// </summary>
-    /// <param name="metadataA">Dir. A's metadata</param>
-    /// <param name="hashToFileB">Dir. B's Hash to file map</param>
-    /// <param name="differences">Differences dictionary</param>
-    /// <returns> Differences dictionary</returns>
-    private void CheckForOnlyInAFiles(List<FileMetadata> metadataA, Dictionary<string, string> hashToFileB, Dictionary<int, List<object>> differences)
+    [Serializable]
+    public class MetadataDifference
     {
-        foreach (FileMetadata fileA in metadataA)
-        {
-            if (!hashToFileB.ContainsKey(fileA.FileHash))
-            {
-                differences[1].Add(new Dictionary<string, string>
-            {
-                { "FileName", fileA.FileName },
-                { "FileHash", fileA.FileHash }
-            });
-                _uniqueServerFiles.Add(fileA.FileName);
-            }
-        }
+        [XmlElement("Key")]
+        public string Key { get; set; }
+
+        [XmlArray("Value")]
+        [XmlArrayItem("FileDetail")] // Define individual item
+        public List<FileDetail> Value { get; set; } = new List<FileDetail>();
+    }
+
+    [Serializable]
+    public class FileDetail
+    {
+        [XmlElement("FileName")]
+        public string FileName { get; set; }
+
+        [XmlElement("FileHash")]
+        public string FileHash { get; set; }
+
+        [XmlElement("RenameFrom")]
+        public string RenameFrom { get; set; }
+
+        [XmlElement("RenameTo")]
+        public string RenameTo { get; set; }
     }
 }

@@ -21,6 +21,22 @@ public class Utils
         return File.ReadAllText(filePath);
     }
 
+    public static string? ReadBinaryFile(string filePath)
+    {
+        if (!File.Exists(filePath))
+        {
+            Debug.WriteLine("File not found. Please check the path and try again.");
+            return null;
+        }
+
+        // Read all bytes from the file
+        byte[] byteArray = File.ReadAllBytes(filePath);
+
+        // Convert byte array to a base64 string
+        return Convert.ToBase64String(byteArray);
+    }
+
+
     /// <summary>
     /// Write/Overwrite content to file
     /// </summary>
@@ -40,6 +56,35 @@ public class Utils
         }
     }
 
+    public static bool WriteToFileFromBinary(string filePath, string content)
+    {
+        try
+        {
+            byte[] data;
+
+            // Check if the content is in base64 format by attempting to decode it
+            try
+            {
+                data = Convert.FromBase64String(content);
+            }
+            catch (FormatException)
+            {
+                // If it's not base64, write as a regular string
+                File.WriteAllText(filePath, content);
+                return true;
+            }
+
+            // If decoding to byte array is successful, write as binary
+            File.WriteAllBytes(filePath, data);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"An error occurred while writing to the file: {ex.Message}");
+            return false;
+        }
+    }
+
     /// <summary> Serializes an object to its string representation.
     /// </summary>
     /// <typeparam name="T">The type of the object to serialize.</typeparam>
@@ -47,8 +92,15 @@ public class Utils
     /// <returns>A string representation of the serialized object.</returns>
     public static string SerializeObject<T>(T obj)
     {
-        ISerializer serializer = new Serializer();
-        return serializer.Serialize(obj);
+        try
+        {
+            ISerializer serializer = new Serializer();
+            return serializer.Serialize(obj);
+        }
+        catch (Exception ex) { 
+            Console.WriteLine(ex.ToString());
+            return "";
+        }
     }
 
     /// <summary>
@@ -83,13 +135,10 @@ public class Utils
         }
 
         string serializedMetadata = Utils.SerializeObject(metadata);
-        Console.WriteLine(serializedMetadata);
         FileContent fileContent = new FileContent("metadata.json", serializedMetadata);
         List<FileContent> fileContents = new List<FileContent> { fileContent };
 
         DataPacket dataPacket = new DataPacket(DataPacket.PacketType.Metadata, fileContents);
-        Console.WriteLine(dataPacket);
-        Console.WriteLine(Utils.SerializeObject(dataPacket));
         return SerializeObject(dataPacket);
     }
 }
