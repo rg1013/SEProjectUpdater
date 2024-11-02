@@ -74,6 +74,12 @@
     <Grid>
         <!-- StackPanel for vertical alignment of elements -->
         <StackPanel Margin="10">
+            <!-- Buttons to choose Server or Client Mode -->
+            <TextBlock Text="Choose Mode:" FontSize="16" FontWeight="Bold" Foreground="Black" Margin="0,20,0,10"/>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                <Button Content="Server Mode" Width="150" Height="35" Click="OnServerModeClicked"/>
+                <Button Content="Client Mode" Width="150" Height="35" Click="OnClientModeClicked"/>
+            </StackPanel>
 
             <!-- Text header for the available tools list -->
             <TextBlock Text="Available Tools" FontSize="16" FontWeight="Bold" Foreground="Black" Margin="0,20,0,10"/>

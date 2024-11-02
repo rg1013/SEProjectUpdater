@@ -180,6 +180,7 @@ namespace Networking.Communication
                 // Broadcast to all clients
                 foreach (var client in clients.Values)
                 {
+                    client.GetStream().Write(buflen, 0, buflen.Length);
                     client.GetStream().Write(buffer, 0, buffer.Length);
                 }
             }
