@@ -117,6 +117,9 @@ namespace UI.Views
                 else
                 {
                     LogServiceViewModel.UpdateLogDetails("Failed to connect to server.\n"); // Log failure
+                    StartServerButton.IsEnabled = true; // Disable Start button
+                    StopServerButton.IsEnabled = false; // Disable Stop button
+                    ConnectButton.IsEnabled = true;
                 }
             }
         }
