@@ -54,15 +54,17 @@ public class Server
 
     public class ClientMetadataHandler : INotificationHandler
     {
+        public string clientID = "";
         private readonly ICommunicator _communicator;
         private readonly Dictionary<string, TcpClient> clientConnections = new Dictionary<string, TcpClient>(); // Track clients
+        private static int clientCounter = 0;
 
         public ClientMetadataHandler(ICommunicator communicator)
         {
             _communicator = communicator;
         }
 
-        public static void PacketDemultiplexer(string serializedData, ICommunicator communicator)
+        public static void PacketDemultiplexer(string serializedData, ICommunicator communicator, string clientID)
         {
             try
             {
@@ -73,13 +75,13 @@ public class Server
                 switch (dataPacket.DataPacketType)
                 {
                     case DataPacket.PacketType.Metadata:
-                        MetadataHandler(dataPacket, communicator);
+                        MetadataHandler(dataPacket, communicator, clientID);
                         break;
                     case DataPacket.PacketType.Broadcast:
                         BroadcastHandler(dataPacket);
                         break;
                     case DataPacket.PacketType.ClientFiles:
-                        ClientFilesHandler(dataPacket, communicator);
+                        ClientFilesHandler(dataPacket, communicator, clientID);
                         break;
                     case DataPacket.PacketType.Differences:
                         DifferencesHandler(dataPacket);
@@ -94,7 +96,7 @@ public class Server
             }
         }
 
-        private static void MetadataHandler(DataPacket dataPacket, ICommunicator communicator)
+        private static void MetadataHandler(DataPacket dataPacket, ICommunicator communicator, string clientID)
         {
             try
             {
@@ -121,7 +123,7 @@ public class Server
                 Trace.WriteLine("[Updater]: Metadata from client received");
 
                 // Generate metadata of server
-                List<FileMetadata>? metadataServer = new DirectoryMetadataGenerator(@"C:\received").GetMetadata();
+                List<FileMetadata>? metadataServer = new DirectoryMetadataGenerator(@"C:\temp").GetMetadata();
                 if (metadataServer == null)
                 {
                     throw new Exception("Metadata server is null");
@@ -134,7 +136,7 @@ public class Server
 
                 // Serialize and save differences to C:\temp\ folder
                 string serializedDifferences = Utils.SerializeObject(differences);
-                string tempFilePath = @"C:\received\differences.xml";
+                string tempFilePath = @"C:\temp\differences.xml";
 
                 if (string.IsNullOrEmpty(serializedDifferences))
                 {
@@ -164,7 +166,7 @@ public class Server
                 // Retrieve and add unique server files to fileContentsToSend
                 foreach (string filename in comparerInstance.UniqueServerFiles)
                 {
-                    string filePath = Path.Combine(@"C:\received", filename);
+                    string filePath = Path.Combine(@"C:\temp", filename);
                     string? content = Utils.ReadBinaryFile(filePath);
 
                     if (content == null)
@@ -196,8 +198,8 @@ public class Server
 
                 try
                 {
-                    NotifyClients("Sending files to client and waiting to recieve files from client");
-                    communicator.Send(serializedDataPacket, "ClientMetadataHandler", "Client1"); // Replace "Client1" with appropriate client ID
+                    NotifyClients($"Sending files to client and waiting to recieve files from client {clientID}");
+                    communicator.Send(serializedDataPacket, "ClientMetadataHandler", clientID); // Replace "Client1" with appropriate client ID
                 }
                 catch (Exception ex)
                 {
@@ -223,7 +225,7 @@ public class Server
             }
         }
 
-        private static void ClientFilesHandler(DataPacket dataPacket, ICommunicator communicator)
+        private static void ClientFilesHandler(DataPacket dataPacket, ICommunicator communicator, string clientID)
         {
             try
             {
@@ -237,7 +239,7 @@ public class Server
                     if (fileContent != null)
                     {
                         string content = Utils.DeserializeObject<string>(fileContent.SerializedContent);
-                        string filePath = Path.Combine(@"C:\received", fileContent.FileName);
+                        string filePath = Path.Combine(@"C:\temp", fileContent.FileName);
                         bool status = Utils.WriteToFileFromBinary(filePath, content);
 
                         if (!status)
@@ -246,6 +248,7 @@ public class Server
                         }
                     }
                 }
+
                 NotifyClients("Successfully received client's files");
                 Trace.WriteLine("[Updater] Successfully received client's files");
 
@@ -299,8 +302,9 @@ public class Server
                 else
                 {
                     Trace.WriteLine("[Updater] Read received data Successfully");
-                    PacketDemultiplexer(serializedData, _communicator);
+                    PacketDemultiplexer(serializedData, _communicator, clientID);
                 }
+
             }
             catch (Exception ex)
             {
@@ -318,6 +322,7 @@ public class Server
             {
                 // Generate a unique client ID
                 string clientId = $"Client{Interlocked.Increment(ref clientCounter)}"; // Use Interlocked for thread safety
+                clientID = clientId;
                 Trace.WriteLine($"[Updater] ClientMetadataHandler detected new client connection: {socket.Client.RemoteEndPoint}, assigned ID: {clientId}");
                 NotifyClients($"Detected new client connection: {socket.Client.RemoteEndPoint}, assigned ID: {clientId}");
                 clientConnections.Add(clientId, socket); // Add client connection to the dictionary

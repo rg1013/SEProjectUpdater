@@ -206,6 +206,7 @@ public class Client
 
                 // Using the deserialized differences list to retrieve UniqueClientFiles
                 List<string> filenameList = differencesList
+                    .Where(difference => difference != null && difference.Key == "-1")
                     .SelectMany(difference => difference.Value?.Select(fileDetail => fileDetail.FileName) ?? new List<string>())
                     .Distinct()
                     .ToList();
