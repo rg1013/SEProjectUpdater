@@ -1,8 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿/******************************************************************************
+* Filename    = DirectoryMetadataGenerator.cs
+*
+* Author      = Amithabh A
+*
+* Product     = Updater
+* 
+* Project     = Lab Monitoring Software
+*
+* Description = 
+*****************************************************************************/
+
 using System.Security.Cryptography;
-using System.Text.Json;
 using System.Diagnostics;
 
 namespace Updater;

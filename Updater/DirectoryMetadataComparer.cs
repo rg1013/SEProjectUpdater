@@ -1,6 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿/******************************************************************************
+* Filename    = DirectoryMetadataComparer.cs
+*
+* Author      = Amithabh A
+*
+* Product     = Updater
+* 
+* Project     = Lab Monitoring Software
+*
+* Description = 
+*****************************************************************************/
+
 using System.Xml.Serialization;
 
 namespace Updater

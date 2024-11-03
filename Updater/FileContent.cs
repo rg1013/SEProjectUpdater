@@ -1,4 +1,15 @@
-﻿using System;
+﻿/******************************************************************************
+* Filename    = FileContent.cs
+*
+* Author      = Amithabh A
+*
+* Product     = Updater
+* 
+* Project     = Lab Monitoring Software
+*
+* Description = 
+*****************************************************************************/
+
 using System.Xml.Serialization;
 
 namespace Updater;

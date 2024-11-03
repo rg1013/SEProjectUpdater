@@ -1,10 +1,17 @@
-﻿using Networking.Communication;
+﻿/******************************************************************************
+* Filename    = Client.cs
+*
+* Author      = Amithabh A and Garima Ranjan
+*
+* Product     = Updater
+* 
+* Project     = Lab Monitoring Software
+*
+* Description = Client side sending and receiving files logic
+*****************************************************************************/
+
+using Networking.Communication;
 using Networking;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Diagnostics;
 
 namespace Updater;
@@ -120,7 +127,7 @@ public class Client
                 // Get files
                 foreach (FileContent fileContent in fileContentList)
                 {
-                    if (fileContent != null)
+                    if (fileContent != null && fileContent.SerializedContent != null && fileContent.FileName != null)
                     {
                         // Deserialize the content based on expected format
                         string content = Utils.DeserializeObject<string>(fileContent.SerializedContent);
@@ -179,11 +186,11 @@ public class Client
                     {
                         continue;
                     }
-                    if (fileContent != null)
+                    if (fileContent != null && fileContent.SerializedContent != null)
                     {
                         string content;
                         // Check if the SerializedContent is base64 or XML by detecting XML declaration
-                        if (fileContent.SerializedContent != null & fileContent.SerializedContent.StartsWith("<?xml"))
+                        if (fileContent.SerializedContent.StartsWith("<?xml"))
                         {
                             // Directly deserialize XML content
                             content = Utils.DeserializeObject<string>(fileContent.SerializedContent);
@@ -274,11 +281,10 @@ public class Client
             }
         }
     }
-    public static event Action<string> OnLogUpdate; // Event for log updates
+    public static event Action<string>? OnLogUpdate;
 
     public static void ReceiveData(string data)
     {
-        // Process received data...
-        OnLogUpdate?.Invoke(data); // Raise the event with the log
+        OnLogUpdate?.Invoke(data); 
     }
 }

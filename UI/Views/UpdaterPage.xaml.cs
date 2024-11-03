@@ -71,6 +71,11 @@ namespace UI.Views
 
                 StartServerButton.IsEnabled = false; // Disable Start button 
                 StopServerButton.IsEnabled = true; // Enable Stop button 
+
+                // Disable all other buttons
+                DisconnectButton.IsEnabled = false; // Disable Disconnect button
+                ConnectButton.IsEnabled = false; // Disable Connect button
+                                                 // Add any additional buttons you want to disable here
             }
             else
             {
@@ -85,6 +90,10 @@ namespace UI.Views
             // Enable the Start Server button after stopping the server 
             StartServerButton.IsEnabled = true;
             StopServerButton.IsEnabled = false; // Disable Stop button 
+                                                // Disable all other buttons
+            DisconnectButton.IsEnabled = true; // Disable Disconnect button
+            ConnectButton.IsEnabled = true; // Disable Connect button
+
         }
 
         private async void ConnectButton_Click(object sender, RoutedEventArgs e) // Handler for connect button click 
@@ -94,12 +103,16 @@ namespace UI.Views
                 LogServiceViewModel.UpdateLogDetails("Connecting to server...\n"); // Log connecting message
                 await _clientViewModel.ConnectAsync();
 
-                // Disable Connect button if successfully connected 
+                // Disable all other buttons except for Disconnect
+                StartServerButton.IsEnabled = false; // Disable Start button
+                StopServerButton.IsEnabled = false; // Disable Stop button
+                ConnectButton.IsEnabled = false; // Disable Connect button
+
+                // Enable Disconnect button
                 if (_clientViewModel.IsConnected)
                 {
                     LogServiceViewModel.UpdateLogDetails("Successfully connected to server!\n"); // Log successful connection
-                    ConnectButton.IsEnabled = false; // Update your button's name 
-                    DisconnectButton.IsEnabled = true; // Enable Disconnect button 
+                    DisconnectButton.IsEnabled = true; // Enable Disconnect button
                 }
                 else
                 {
@@ -114,9 +127,12 @@ namespace UI.Views
             {
                 _clientViewModel.Disconnect();
                 LogServiceViewModel.UpdateLogDetails("Disconnected from server.\n"); // Log disconnection message
-                // Enable Connect button after disconnection 
-                DisconnectButton.IsEnabled = false; // Update your button's name 
-                ConnectButton.IsEnabled = true; // Enable Connect button 
+
+                // Enable buttons after disconnection
+                StartServerButton.IsEnabled = true; // Enable Start button
+                StopServerButton.IsEnabled = false; // Disable Stop button
+                ConnectButton.IsEnabled = true; // Enable Connect button
+                DisconnectButton.IsEnabled = false; // Disable Disconnect button
             }
         }
     }

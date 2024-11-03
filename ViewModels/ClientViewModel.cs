@@ -1,7 +1,18 @@
-﻿using Networking;
+﻿/******************************************************************************
+* Filename    = ClientViewModel.cs
+*
+* Author      = Garima Ranjan
+*
+* Product     = Updater
+* 
+* Project     = Lab Monitoring Software
+*
+* Description = ViewModel for Client side logic
+*****************************************************************************/
+
+using Networking;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 using Updater;
 
 namespace ViewModels
@@ -9,7 +20,7 @@ namespace ViewModels
     public class ClientViewModel : INotifyPropertyChanged
     {
         private Client _client;
-        private string _statusMessage;
+        private string _statusMessage = string.Empty;
         private bool _isConnected;
         private LogServiceViewModel _logServiceViewModel;
 
@@ -81,8 +92,8 @@ namespace ViewModels
             UpdateLog("Disconnected from server."); // Log the disconnection
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }

@@ -1,12 +1,18 @@
-﻿using Networking.Communication;
+﻿/******************************************************************************
+* Filename    = Server.cs
+*
+* Author      = Amithabh A and Garima Ranjan
+*
+* Product     = Updater
+* 
+* Project     = Lab Monitoring Software
+*
+* Description = Server side sending and receiving files logic
+*****************************************************************************/
+
+using Networking.Communication;
 using Networking;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Net.Sockets;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Diagnostics;
 
 namespace Updater;
@@ -16,7 +22,7 @@ public class Server
     static SemaphoreSlim semaphore = new SemaphoreSlim(1, 1); // Allow one client at a time
     static int clientCounter = 0; // Counter for unique client IDs
 
-    private ICommunicator _communicator;
+    private ICommunicator? _communicator;
 
     public static event Action<string>? NotificationReceived; // Event to notify the view model
 
@@ -43,7 +49,7 @@ public class Server
     {
         try
         {
-            _communicator.Stop();
+            _communicator?.Stop();
             NotifyClients("Server stopped.");
         }
         catch (Exception ex)
@@ -77,14 +83,8 @@ public class Server
                     case DataPacket.PacketType.Metadata:
                         MetadataHandler(dataPacket, communicator, clientID);
                         break;
-                    case DataPacket.PacketType.Broadcast:
-                        BroadcastHandler(dataPacket);
-                        break;
                     case DataPacket.PacketType.ClientFiles:
                         ClientFilesHandler(dataPacket, communicator, clientID);
-                        break;
-                    case DataPacket.PacketType.Differences:
-                        DifferencesHandler(dataPacket);
                         break;
                     default:
                         throw new Exception("Invalid PacketType");
@@ -115,11 +115,20 @@ public class Server
                 Trace.WriteLine("[Updater] " + serializedContent ?? "Serialized content is null");
 
                 // Deserialize the client metadata
-                List<FileMetadata>? metadataClient = Utils.DeserializeObject<List<FileMetadata>>(serializedContent);
+                List<FileMetadata>? metadataClient;
+                if (serializedContent != null)
+                {
+                    metadataClient = Utils.DeserializeObject<List<FileMetadata>>(serializedContent);
+                }
+                else
+                {
+                    metadataClient = null;
+                }
                 if (metadataClient == null)
                 {
-                    throw new Exception("Deserialized client metadata is null");
+                    throw new Exception("[Updater] Deserialized client metadata is null");
                 }
+
                 Trace.WriteLine("[Updater]: Metadata from client received");
 
                 // Generate metadata of server
@@ -199,7 +208,7 @@ public class Server
                 try
                 {
                     NotifyClients($"Sending files to client and waiting to recieve files from client {clientID}");
-                    communicator.Send(serializedDataPacket, "ClientMetadataHandler", clientID); // Replace "Client1" with appropriate client ID
+                    communicator.Send(serializedDataPacket, "ClientMetadataHandler", clientID); 
                 }
                 catch (Exception ex)
                 {
@@ -209,19 +218,6 @@ public class Server
             catch (Exception ex)
             {
                 Trace.WriteLine($"[Updater] Error sending data to client: {ex.Message}");
-            }
-        }
-
-        private static void BroadcastHandler(DataPacket dataPacket)
-        {
-            try
-            {
-                // Implement BroadcastHandler logic here
-                throw new NotImplementedException();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in BroadcastHandler: {ex.Message}");
             }
         }
 
@@ -236,7 +232,7 @@ public class Server
                 // Get files
                 foreach (FileContent fileContent in fileContentList)
                 {
-                    if (fileContent != null)
+                    if (fileContent != null && fileContent.SerializedContent != null && fileContent.FileName != null)
                     {
                         string content = Utils.DeserializeObject<string>(fileContent.SerializedContent);
                         string filePath = Path.Combine(@"C:\temp", fileContent.FileName);
@@ -272,19 +268,6 @@ public class Server
             catch (Exception ex)
             {
                 Trace.WriteLine($"[Updater] Error in ClientFilesHandler: {ex.Message}");
-            }
-        }
-
-        private static void DifferencesHandler(DataPacket dataPacket)
-        {
-            try
-            {
-                // Implement DifferencesHandler logic here
-                throw new NotImplementedException();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in DifferencesHandler: {ex.Message}");
             }
         }
 

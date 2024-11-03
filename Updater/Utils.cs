@@ -1,4 +1,16 @@
-﻿using System.Diagnostics;
+﻿/******************************************************************************
+* Filename    = Utils.cs
+*
+* Author      = Amithabh A
+*
+* Product     = Updater
+* 
+* Project     = Lab Monitoring Software
+*
+* Description = 
+*****************************************************************************/
+
+using System.Diagnostics;
 using Networking.Serialization;
 
 namespace Updater;

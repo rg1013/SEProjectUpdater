@@ -1,11 +1,18 @@
-﻿using System;
-using System.Collections.ObjectModel;
+﻿/******************************************************************************
+* Filename    = ServerViewModel.cs
+*
+* Author      = Garima Ranjan
+*
+* Product     = Updater
+* 
+* Project     = Lab Monitoring Software
+*
+* Description = ViewModel for Server side logic
+*****************************************************************************/
+
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Windows;
 using Updater;
-using ViewModels;
 
 namespace ViewModels;
 public class ServerViewModel : INotifyPropertyChanged
@@ -53,9 +60,9 @@ public class ServerViewModel : INotifyPropertyChanged
     }
 
 
-    public event PropertyChangedEventHandler PropertyChanged;
+    public event PropertyChangedEventHandler? PropertyChanged;
 
-    protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }

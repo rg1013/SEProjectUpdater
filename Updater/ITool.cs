@@ -1,4 +1,16 @@
-﻿namespace Updater;
+﻿/******************************************************************************
+* Filename    = ITool.cs
+*
+* Author      = Garima Ranjan
+*
+* Product     = Updater
+* 
+* Project     = Lab Monitoring Software
+*
+* Description = Interface defined for tool
+*****************************************************************************/
+
+namespace Updater;
 public interface ITool
 {
     int Id { get; set; }
