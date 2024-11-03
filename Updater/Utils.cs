@@ -23,16 +23,6 @@ public class Utils
     /// </summary>
     /// <param name="filePath">Path of file to read. </param>
     /// <returns>Filecontent as string, or null if file dne</returns>
-    public static string? ReadFile(string filePath)
-    {
-        if (!File.Exists(filePath))
-        {
-            Debug.WriteLine("File not found. Please check the path and try again.");
-            return null;
-        }
-        return File.ReadAllText(filePath);
-    }
-
     public static string? ReadBinaryFile(string filePath)
     {
         if (!File.Exists(filePath))
@@ -54,20 +44,6 @@ public class Utils
     /// </summary>
     /// <param name="filePath">Path of file</param>
     /// <param name="content">Content to write.</param>
-    public static bool WriteToFile(string filePath, string content)
-    {
-        try
-        {
-            File.WriteAllText(filePath, content);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"An error occurred while writing to the file: {ex.Message}");
-            return false;
-        }
-    }
-
     public static bool WriteToFileFromBinary(string filePath, string content)
     {
         try
