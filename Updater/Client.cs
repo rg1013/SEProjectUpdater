@@ -5,50 +5,54 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace Updater;
 
 public class Client
 {
-    static void Main(string[] args)
+    private readonly ICommunicator _communicator;
+
+    public Client(ICommunicator communicator)
     {
-        try
+        _communicator = communicator;
+    }
+
+    public async Task<string> StartAsync(string ipAddress, string port)
+    {
+        ReceiveData($"Attempting to connect to server at {ipAddress}:{port}...");
+        string result = await Task.Run(() => _communicator.Start(ipAddress, port));
+        if (result == "success")
         {
-            ICommunicator client = CommunicationFactory.GetCommunicator(true);
-
-            // Starting the client
-            string result = client.Start("10.32.2.232", "60091");
-            if (result == "success")
-            {
-                Console.WriteLine("Connected to server!");
-
-                // Subscribing the "ClientMetadataHandler" for handling notifications
-                client.Subscribe("ClientMetadataHandler", new ClientMetadataHandler(client));
-
-                string serializedMetaData = Utils.SerializedMetadataPacket();
-
-                // Sending data as ClientMetadataHandler
-                Console.WriteLine("Sending data as ClientMetadataHandler...");
-                client.Send(serializedMetaData, "ClientMetadataHandler", null);
-
-                // Waiting for some time to let data be processed
-                System.Threading.Thread.Sleep(5000);
-
-                Console.WriteLine("Press any key to disconnect...");
-                Console.ReadKey();
-
-                // Disconnecting the client
-                client.Stop();
-            }
-            else
-            {
-                Console.WriteLine("Failed to connect to server.");
-            }
+            ReceiveData("Successfully connected to server.");
         }
-        catch (Exception ex)
+        else
         {
-            Console.WriteLine($"Error in ClientProgram: {ex.Message}");
+            ReceiveData("Failed to connect to server.");
         }
+        return result;
+    }
+
+    public void Subscribe()
+    {
+        _communicator.Subscribe("ClientMetadataHandler", new ClientMetadataHandler(_communicator));
+        SyncUp();
+    }
+
+    public void SyncUp()
+    {
+        string serializedMetaData = Utils.SerializedMetadataPacket();
+
+        // Sending data as ClientMetadataHandler
+        ReceiveData("Syncing Up with the server");
+        Trace.WriteLine("[Updater] Sending data as ClientMetadataHandler...");
+        _communicator.Send(serializedMetaData, "ClientMetadataHandler", null);
+    }
+
+    public void Stop()
+    {
+        ReceiveData("Client disconnected");
+        _communicator.Stop();
     }
 
 
@@ -65,9 +69,6 @@ public class Client
         {
             try
             {
-                // Deserialize data
-                Console.WriteLine(serializedData);
-
                 DataPacket dataPacket = Utils.DeserializeObject<DataPacket>(serializedData);
 
                 // Check PacketType
@@ -92,7 +93,7 @@ public class Client
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in PacketDemultiplexer: {ex.Message}");
+                Trace.WriteLine($"[Updater] Error in PacketDemultiplexer: {ex.Message}");
             }
         }
 
@@ -112,15 +113,13 @@ public class Client
         {
             try
             {
+                ReceiveData("Recieved Broadcast from server");
                 // File list
                 List<FileContent> fileContentList = dataPacket.FileContentList;
-
-                Console.WriteLine("Inside Broadcasting!!");
 
                 // Get files
                 foreach (FileContent fileContent in fileContentList)
                 {
-                    Console.WriteLine(fileContent.FileName);
                     if (fileContent != null)
                     {
                         // Deserialize the content based on expected format
@@ -133,10 +132,11 @@ public class Client
                         }
                     }
                 }
+                ReceiveData("Up-to-date with the server");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in BroadcastHandler: {ex.Message}");
+                Console.WriteLine($"[Updater] Error in BroadcastHandler: {ex.Message}");
             }
         }
 
@@ -156,6 +156,7 @@ public class Client
         {
             try
             {
+                ReceiveData("Recieved files from Server");
                 List<FileContent> fileContentList = dataPacket.FileContentList;
 
                 // Deserialize the 'differences' file content
@@ -165,7 +166,7 @@ public class Client
 
                 if (serializedDifferences == null)
                 {
-                    throw new Exception("SerializedContent is null");
+                    throw new Exception("[Updater] SerializedContent is null");
                 }
 
                 // Deserialize to List<MetadataDifference>
@@ -198,7 +199,7 @@ public class Client
                         bool status = Utils.WriteToFileFromBinary(filePath, content);
                         if (!status)
                         {
-                            throw new Exception("Failed to write file");
+                            throw new Exception("[Updater] Failed to write file");
                         }
                     }
                 }
@@ -208,6 +209,8 @@ public class Client
                     .SelectMany(difference => difference.Value?.Select(fileDetail => fileDetail.FileName) ?? new List<string>())
                     .Distinct()
                     .ToList();
+
+                ReceiveData("Recieved request for files from Server");
 
                 // Create list of FileContent to send back
                 List<FileContent> fileContentToSend = new List<FileContent>();
@@ -220,7 +223,6 @@ public class Client
                     }
                     if (filename != null)
                     {
-                        Console.WriteLine(filename);
                         string filePath = Path.Combine(@"C:\temp", filename);
                         string? content = Utils.ReadBinaryFile(filePath);
 
@@ -246,12 +248,13 @@ public class Client
                 // Serialize and send DataPacket
                 string? serializedDataPacket = Utils.SerializeObject(dataPacketToSend);
 
-                Console.WriteLine("Sending files to server");
+                ReceiveData("Sending requested files to server");
+                Trace.WriteLine("Sending files to server");
                 communicator.Send(serializedDataPacket, "ClientMetadataHandler", null);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in DifferencesHandler: {ex.Message}");
+                Trace.WriteLine($"[Updater] Error in DifferencesHandler: {ex.Message}");
             }
         }
 
@@ -259,18 +262,20 @@ public class Client
         {
             try
             {
-                Console.WriteLine($"ClientMetadataHandler received data");
+                
+                Trace.WriteLine($"[Updater] ClientMetadataHandler received data");
+                ReceiveData($"ClientMetadataHandler received data");
                 PacketDemultiplexer(serializedData, _communicator);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in OnDataReceived: {ex.Message}");
+                Trace.WriteLine($"[Updater] Error in OnDataReceived: {ex.Message}");
             }
         }
     }
-    public event Action<string> OnLogUpdate; // Event for log updates
+    public static event Action<string> OnLogUpdate; // Event for log updates
 
-    public void ReceiveData(string data)
+    public static void ReceiveData(string data)
     {
         // Process received data...
         OnLogUpdate?.Invoke(data); // Raise the event with the log

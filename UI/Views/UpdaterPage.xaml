@@ -5,41 +5,30 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:local="clr-namespace:UI"
       xmlns:vm="clr-namespace:ViewModels;assembly=ViewModels"
-      xmlns:updaterVm="clr-namespace:ViewModels;assembly=ViewModels"
       mc:Ignorable="d"
       Title="UpdaterPage">
 
-    <!-- Resource dictionary setup for styling elements globally within this Page -->
     <Page.Resources>
-
-        <!-- Global style for all Button controls -->
         <Style TargetType="Button">
-            <!-- Adjusting the font and appearance for buttons -->
             <Setter Property="FontFamily" Value="Segoe UI"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="Background" Value="#c23b22"/>
-            <!-- Blue button background -->
             <Setter Property="BorderBrush" Value="#c23b22"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="10,5"/>
             <Setter Property="Margin" Value="10,5"/>
             <Setter Property="Height" Value="35"/>
             <Setter Property="Cursor" Value="Hand"/>
-
-            <!-- Drop shadow effect for buttons -->
             <Setter Property="Effect">
                 <Setter.Value>
                     <DropShadowEffect BlurRadius="8" ShadowDepth="2" Direction="270" Color="#AAAAAA"/>
                 </Setter.Value>
             </Setter>
-
-            <!-- ControlTemplate for customizing the button appearance (rounded corners) -->
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <!-- Button with rounded corners -->
                         <Border Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
@@ -48,11 +37,9 @@
                                               VerticalAlignment="Center"
                                               Content="{TemplateBinding Content}"/>
                         </Border>
-                        <!-- Change background on mouse hover -->
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Background" Value="#db5856"/>
-                                <!-- Darker blue on hover -->
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -60,72 +47,56 @@
             </Setter>
         </Style>
 
-        <!-- Global style for TextBlock controls to ensure consistent font sizes and layout -->
         <Style TargetType="TextBlock">
             <Setter Property="FontFamily" Value="Segoe UI"/>
             <Setter Property="FontSize" Value="14"/>
-            <!-- Smaller font size for text headers -->
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Margin" Value="0,0,0,8"/>
         </Style>
     </Page.Resources>
 
-    <!-- Main layout grid to structure the UI elements -->
     <Grid>
-        <!-- StackPanel for vertical alignment of elements -->
         <StackPanel Margin="10">
-            <!-- Buttons to choose Server or Client Mode -->
             <TextBlock Text="Choose Mode:" FontSize="16" FontWeight="Bold" Foreground="Black" Margin="0,20,0,10"/>
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
-                <Button Content="Server Mode" Width="150" Height="35" Click="OnServerModeClicked"/>
-                <Button Content="Client Mode" Width="150" Height="35" Click="OnClientModeClicked"/>
+            <StackPanel>
+                <Button Content="Start Server" Click="StartServerButton_Click" x:Name="StartServerButton" Width="156"/>
+                <Button Content="Stop Server" Click="StopServerButton_Click" x:Name="StopServerButton" Width="156"/>
             </StackPanel>
 
-            <!-- Text header for the available tools list -->
             <TextBlock Text="Available Tools" FontSize="16" FontWeight="Bold" Foreground="Black" Margin="0,20,0,10"/>
-
-            <!-- Scrollable ListView for displaying available tools with a smaller font size -->
             <ScrollViewer Height="150" VerticalScrollBarVisibility="Auto" Width="748">
-        <ListView x:Name="ToolViewList" ItemsSource="{Binding AvailableToolsList}" Margin="0,0,0,0" BorderThickness="2" BorderBrush="Black">
-            <ListView.View>
-                <GridView>
-                    <!-- Columns for the tools' details: ID, Version, Description, etc. with reduced width -->
-                    <GridViewColumn Header="ID" DisplayMemberBinding="{Binding ID}" Width="50" />
-                    <GridViewColumn Header="Version" DisplayMemberBinding="{Binding Version}" Width="60" />
-                    <GridViewColumn Header="Description" DisplayMemberBinding="{Binding Description}" Width="280" />
-                    <GridViewColumn Header="Deprecated" DisplayMemberBinding="{Binding Deprecated}" Width="80" />
-                    <GridViewColumn Header="Created By" DisplayMemberBinding="{Binding CreatedBy}" Width="200" />
-                </GridView>
-            </ListView.View>
-        </ListView>
-</ScrollViewer>
+                <ListView x:Name="ToolViewList" ItemsSource="{Binding AvailableToolsList}" Margin="0,0,0,0" BorderThickness="2" BorderBrush="Black">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="ID" DisplayMemberBinding="{Binding ID}" Width="50" />
+                            <GridViewColumn Header="Version" DisplayMemberBinding="{Binding Version}" Width="60" />
+                            <GridViewColumn Header="Description" DisplayMemberBinding="{Binding Description}" Width="280" />
+                            <GridViewColumn Header="Deprecated" DisplayMemberBinding="{Binding Deprecated}" Width="80" />
+                            <GridViewColumn Header="Created By" DisplayMemberBinding="{Binding CreatedBy}" Width="200" />
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </ScrollViewer>
 
+            <TextBlock Text="Client Connection" FontSize="16" FontWeight="Bold" Foreground="Black" Margin="0,20,0,10"/>
+            <Button Content="Connect" Click="ConnectButton_Click" x:Name="ConnectButton" Width="156"/>
+            <Button Content="Disconnect" Click="DisconnectButton_Click" x:Name="DisconnectButton" IsEnabled="False" Width="156"/>
 
-            <!-- Upload Analyzers Button -->
             <Button Content="Upload Analyzers" Width="150" Height="35"/>
-
-            <!-- Check for Updates Button -->
             <Button Content="Check for Updates" Width="150" Height="35"/>
 
-            <!-- Section header for Log Details -->
             <TextBlock Text="Log Details:" FontSize="16" FontWeight="Bold" Margin="0,20,0,10" Foreground="Black"/>
-
-            <!-- Scrollable area for displaying log details -->
             <ScrollViewer Height="131" VerticalScrollBarVisibility="Auto" Width="748" BorderThickness="2" BorderBrush="Black">
                 <StackPanel>
-                    <!-- Text block that binds to the log details from the ViewModel -->
                     <TextBlock Text="{Binding LogDetails}" TextWrapping="Wrap" Margin="0,0,0,10" FontSize="12" Foreground="Black"/>
                 </StackPanel>
             </ScrollViewer>
         </StackPanel>
 
-        <!-- Popup for displaying notifications, bound to NotificationVisible and NotificationMessage from the ViewModel -->
         <Popup IsOpen="{Binding NotificationVisible}" Placement="Top" HorizontalAlignment="Right" Margin="0,10,10,0">
             <Border Background="LightGray" Padding="5">
-                <!-- Text block for showing notification message -->
                 <TextBlock Text="{Binding NotificationMessage}" FontSize="12" />
             </Border>
         </Popup>
-
     </Grid>
 </Page>

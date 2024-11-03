@@ -2,46 +2,60 @@
 using Networking;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Sockets;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace Updater;
 
 public class Server
 {
     static SemaphoreSlim semaphore = new SemaphoreSlim(1, 1); // Allow one client at a time
+    static int clientCounter = 0; // Counter for unique client IDs
 
-    static void Main(string[] args)
+    private ICommunicator _communicator;
+
+    public static event Action<string>? NotificationReceived; // Event to notify the view model
+
+    public void Start(string ip, string port)
     {
         try
         {
-            ICommunicator server = CommunicationFactory.GetCommunicator(false);
+            _communicator = CommunicationFactory.GetCommunicator(false);
 
             // Starting the server
-            string result = server.Start("10.32.2.232", "60091");
-            Console.WriteLine($"Server started on {result}");
+            string result = _communicator.Start(ip, port);
+            NotifyClients($"Server started on {result}");
 
             // Subscribing the "ClientMetadataHandler" for handling notifications
-            server.Subscribe("ClientMetadataHandler", new ClientMetadataHandler(server));
-
-            Console.WriteLine("Press any key to stop the server...");
-            Console.ReadKey();
-
-            // Stop the server when user presses a key
-            server.Stop();
+            _communicator.Subscribe("ClientMetadataHandler", new ClientMetadataHandler(_communicator));
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in server: {ex.Message}");
+            NotifyClients($"Error in server start: {ex.Message}");
         }
     }
 
+    public void Stop()
+    {
+        try
+        {
+            _communicator.Stop();
+            NotifyClients("Server stopped.");
+        }
+        catch (Exception ex)
+        {
+            NotifyClients($"Error stopping the server: {ex.Message}");
+        }
+    }
 
     public class ClientMetadataHandler : INotificationHandler
     {
         private readonly ICommunicator _communicator;
+        private readonly Dictionary<string, TcpClient> clientConnections = new Dictionary<string, TcpClient>(); // Track clients
 
         public ClientMetadataHandler(ICommunicator communicator)
         {
@@ -96,7 +110,7 @@ public class Server
                 FileContent fileContent = fileContents[0];
                 string? serializedContent = fileContent.SerializedContent;
 
-                Console.WriteLine(serializedContent ?? "Serialized content is null");
+                Trace.WriteLine("[Updater] " + serializedContent ?? "Serialized content is null");
 
                 // Deserialize the client metadata
                 List<FileMetadata>? metadataClient = Utils.DeserializeObject<List<FileMetadata>>(serializedContent);
@@ -104,7 +118,7 @@ public class Server
                 {
                     throw new Exception("Deserialized client metadata is null");
                 }
-                Console.WriteLine("Metadata from client received");
+                Trace.WriteLine("[Updater]: Metadata from client received");
 
                 // Generate metadata of server
                 List<FileMetadata>? metadataServer = new DirectoryMetadataGenerator(@"C:\received").GetMetadata();
@@ -112,7 +126,7 @@ public class Server
                 {
                     throw new Exception("Metadata server is null");
                 }
-                Console.WriteLine("Metadata from server generated");
+                Trace.WriteLine("[Updater] Metadata from server generated");
 
                 // Compare metadata and get differences
                 DirectoryMetadataComparer comparerInstance = new DirectoryMetadataComparer(metadataServer, metadataClient);
@@ -124,7 +138,7 @@ public class Server
 
                 if (string.IsNullOrEmpty(serializedDifferences))
                 {
-                    Console.WriteLine("Serialization of differences failed or resulted in an empty string.");
+                    Trace.WriteLine("[Updater] Serialization of differences failed or resulted in an empty string.");
                     return; // Exit if serialization fails
                 }
 
@@ -132,19 +146,20 @@ public class Server
                 {
                     Directory.CreateDirectory(Path.GetDirectoryName(tempFilePath)!);
                     File.WriteAllText(tempFilePath, serializedDifferences);
-                    Console.WriteLine($"Differences file saved to {tempFilePath}");
+                    NotifyClients($"Differences file saved to {tempFilePath}");
+                    Trace.WriteLine($"[Updater] Differences file saved to {tempFilePath}");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error saving differences file: {ex.Message}");
+                    Trace.WriteLine($"[Updater] Error saving differences file: {ex.Message}");
                 }
 
                 // Prepare data to send to client
                 List<FileContent> fileContentsToSend = new List<FileContent>
-            {
-                // Added difference file to be sent to client
-                new FileContent("differences.xml", serializedDifferences)
-            };
+                {
+                    // Added difference file to be sent to client
+                    new FileContent("differences.xml", serializedDifferences)
+                };
 
                 // Retrieve and add unique server files to fileContentsToSend
                 foreach (string filename in comparerInstance.UniqueServerFiles)
@@ -158,13 +173,13 @@ public class Server
                         continue; // Skip to the next file instead of throwing an exception
                     }
 
-                    Console.WriteLine($"Content length of {filename}: {content.Length}");
+                    Trace.WriteLine($"[Updater] Content length of {filename}: {content.Length}");
 
                     // Serialize file content and create FileContent object
                     string serializedFileContent = Utils.SerializeObject(content);
                     if (string.IsNullOrEmpty(serializedFileContent))
                     {
-                        Console.WriteLine($"Warning: Serialized content for {filename} is null or empty.");
+                        Trace.WriteLine($"[Updater] Warning: Serialized content for {filename} is null or empty.");
                         continue; // Skip to next file if serialization fails
                     }
 
@@ -174,27 +189,24 @@ public class Server
 
                 // Create DataPacket after all FileContents are ready
                 DataPacket dataPacketToSend = new DataPacket(DataPacket.PacketType.Differences, fileContentsToSend);
-                Console.WriteLine($"Total files to send: {fileContentsToSend.Count}");
-                foreach (var filecontent in fileContentsToSend)
-                {
-                    Console.WriteLine($"File: {filecontent.FileName}, Serialized Length: {filecontent.SerializedContent?.Length}");
-                }
+                Trace.WriteLine($"[Updater] Total files to send: {fileContentsToSend.Count}");
 
                 // Serialize DataPacket
                 string serializedDataPacket = Utils.SerializeObject(dataPacketToSend);
 
                 try
                 {
-                    communicator.Send(serializedDataPacket, "ClientMetadataHandler", "Client1");
+                    NotifyClients("Sending files to client and waiting to recieve files from client");
+                    communicator.Send(serializedDataPacket, "ClientMetadataHandler", "Client1"); // Replace "Client1" with appropriate client ID
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error sending data to client: {ex.Message}");
+                    Trace.WriteLine($"[Updater] Error sending data to client: {ex.Message}");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error sending data to client: {ex.Message}");
+                Trace.WriteLine($"[Updater] Error sending data to client: {ex.Message}");
             }
         }
 
@@ -215,6 +227,7 @@ public class Server
         {
             try
             {
+                NotifyClients("Recieved files from client");
                 // File list
                 List<FileContent> fileContentList = dataPacket.FileContentList;
 
@@ -233,7 +246,8 @@ public class Server
                         }
                     }
                 }
-                Console.WriteLine("Successfully recieved client's files");
+                NotifyClients("Successfully received client's files");
+                Trace.WriteLine("[Updater] Successfully received client's files");
 
                 // Broadcast client's new files to all clients
                 dataPacket.DataPacketType = DataPacket.PacketType.Broadcast;
@@ -241,19 +255,20 @@ public class Server
                 // Serialize packet
                 string serializedPacket = Utils.SerializeObject(dataPacket);
 
-                Console.WriteLine("BROADCASTING!!!");
+                NotifyClients("Broadcasting the new files");
+                Trace.WriteLine("[Updater] Broadcasting the new files");
                 try
                 {
-                    communicator.Send(serializedPacket, "ClientMetadataHandler", null);
+                    communicator.Send(serializedPacket, "ClientMetadataHandler", null); // Broadcast to all clients
                 }
-                catch
+                catch (Exception ex)
                 {
-
+                    Trace.WriteLine($"[Updater] Error sending data to client: {ex.Message}");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in ClientFilesHandler: {ex.Message}");
+                Trace.WriteLine($"[Updater] Error in ClientFilesHandler: {ex.Message}");
             }
         }
 
@@ -275,7 +290,7 @@ public class Server
             semaphore.Wait(); // Wait until it's safe to enter
             try
             {
-                Console.WriteLine("ClientMetadataHandler received data");
+                Trace.WriteLine("[Updater] ClientMetadataHandler received data");
                 DataPacket deserializedData = Utils.DeserializeObject<DataPacket>(serializedData);
                 if (deserializedData == null)
                 {
@@ -283,13 +298,13 @@ public class Server
                 }
                 else
                 {
-                    Console.WriteLine("Read Successfully");
+                    Trace.WriteLine("[Updater] Read received data Successfully");
                     PacketDemultiplexer(serializedData, _communicator);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Deserialization failed: {ex.Message}");
+                Trace.WriteLine($"[Updater] Deserialization failed: {ex.Message}");
             }
             finally
             {
@@ -301,12 +316,16 @@ public class Server
         {
             try
             {
-                Console.WriteLine($"ClientMetadataHandler detected new client connection: {socket.Client.RemoteEndPoint}");
-                _communicator.AddClient("Client1", socket);
+                // Generate a unique client ID
+                string clientId = $"Client{Interlocked.Increment(ref clientCounter)}"; // Use Interlocked for thread safety
+                Trace.WriteLine($"[Updater] ClientMetadataHandler detected new client connection: {socket.Client.RemoteEndPoint}, assigned ID: {clientId}");
+                NotifyClients($"Detected new client connection: {socket.Client.RemoteEndPoint}, assigned ID: {clientId}");
+                clientConnections.Add(clientId, socket); // Add client connection to the dictionary
+                _communicator.AddClient(clientId, socket); // Use the unique client ID
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in OnClientJoined: {ex.Message}");
+                Trace.WriteLine($"[Updater] Error in OnClientJoined: {ex.Message}");
             }
         }
 
@@ -314,19 +333,25 @@ public class Server
         {
             try
             {
-                Console.WriteLine($"ClientMetadataHandler detected client {clientId} disconnected");
+                if (clientConnections.Remove(clientId))
+                {
+                    NotifyClients("Detected client {clientId} disconnected");
+                    Trace.WriteLine($"[Updater] ClientMetadataHandler detected client {clientId} disconnected");
+                }
+                else
+                {
+                    Trace.WriteLine($"[Updater] Client {clientId} was not found in the connections.");
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in OnClientLeft: {ex.Message}");
+                Trace.WriteLine($"[Updater] Error in OnClientLeft: {ex.Message}");
             }
         }
     }
-    public event Action<string> OnNotificationReceived; // Event to notify the view model
 
-    public void NotifyClients(string message)
+    public static void NotifyClients(string message)
     {
-        // Logic for notifying clients...
-        OnNotificationReceived?.Invoke(message); // Raise the event
+        NotificationReceived?.Invoke(message);
     }
 }
