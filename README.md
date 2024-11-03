@@ -1,3 +1,3 @@
 # SoftwareEngineering2024
 
-![Class Diagram] (./UpdaterTeam.png)
+![Class Diagram](./UpdaterTeam.png)
