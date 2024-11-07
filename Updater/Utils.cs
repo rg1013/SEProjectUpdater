@@ -109,7 +109,7 @@ public class Utils
     /// <returns>Serialized packet containing metadata of files in a directory.</returns>
     public static string SerializedMetadataPacket()
     {
-        DirectoryMetadataGenerator metadataGenerator = new DirectoryMetadataGenerator();
+        DirectoryMetadataGenerator metadataGenerator = new DirectoryMetadataGenerator(@"C:\received");
 
         if (metadataGenerator == null)
         {

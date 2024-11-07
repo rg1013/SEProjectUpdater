@@ -19,7 +19,7 @@ namespace Updater;
 /// <summary>
 /// Class to Load information of Tools in a hash map.
 /// </summary>
-public class ToolAssemblyLoader : IToolAssemblyLoader
+public class ToolAssemblyLoader
 {
     /// <summary>
     /// Checks if a file is a dll file or not
@@ -34,18 +34,17 @@ public class ToolAssemblyLoader : IToolAssemblyLoader
     /// Returns hash map of information of tools.
     /// </summary>
     /// <param name="folder">Path to the target folder</param>
-    public Dictionary<string, List<string>> LoadToolsFromFolder(string folder)
+    public static Dictionary<string, List<string>> LoadToolsFromFolder(string folder)
     {
-        Dictionary<string, List<string>> toolPropertyMap = new Dictionary<string, List<string>>();
+        Dictionary<string, List<string>> toolPropertyMap = [];
 
         try
         {
             // Ensure the folder exists, if not, create it
             if (!Directory.Exists(folder))
             {
-                Trace.WriteLine($"Directory '{folder}' does not exist. Creating it...");
                 Directory.CreateDirectory(folder);
-                Trace.WriteLine($"Directory '{folder}' created successfully.");
+                Trace.WriteLine($"[Updater] Directory '{folder}' did not exist, created successfully.");
                 return toolPropertyMap; // Exit function if folder is newly created, as it would be empty
             }
 
@@ -66,7 +65,6 @@ public class ToolAssemblyLoader : IToolAssemblyLoader
                         try
                         {
                             Assembly assembly = Assembly.LoadFrom(file);
-                            Trace.WriteLine($"Assembly: {assembly.FullName}");
 
                             Type toolInterface = typeof(ITool);
                             Type[] types = assembly.GetTypes();
@@ -74,7 +72,7 @@ public class ToolAssemblyLoader : IToolAssemblyLoader
                             foreach (Type type in types)
                             {
 
-                                // only classes implementing ITool should be fetched
+                                // only non abstract classes implementing ITool should be fetched
                                 if (toolInterface.IsAssignableFrom(type) && !type.IsInterface && !type.IsAbstract)
                                 {
                                     MethodInfo[] methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
@@ -85,27 +83,30 @@ public class ToolAssemblyLoader : IToolAssemblyLoader
                                         object? instance = Activator.CreateInstance(type);
                                         if (instance != null)
                                         {
-                                            Trace.WriteLine($"Instance of {type.FullName} created successfully!");
+                                            Trace.WriteLine($"[Updater] Instance of {type.FullName} created successfully!");
 
                                             PropertyInfo[] properties = toolInterface.GetProperties();
                                             foreach (PropertyInfo property in properties)
                                             {
                                                 if (property.CanRead)  // To ensure the property is readable
                                                 {
+                                                    Trace.WriteLine(property.Name);
                                                     object? value = property.GetValue(instance);
 
-                                                    if (toolPropertyMap.ContainsKey($"{property.Name}"))
+                                                    string valueString = value is Version version ? version.ToString() : $"{value}";
+
+                                                    if (toolPropertyMap.TryGetValue(property.Name, out List<string>? values))
                                                     {
-                                                        toolPropertyMap[$"{property.Name}"].Add($"{value}");    // appending to the map values if key exists
+                                                        values.Add(valueString); // Append to the existing list if the key exists
                                                     }
                                                     else
                                                     {
-                                                        toolPropertyMap[$"{property.Name}"] = new List<string> { $"{value}" };  // creating a new list for values for new key
+                                                        toolPropertyMap[property.Name] = [valueString]; // Create a new list for the new key
                                                     }
 
-                                                    Trace.WriteLine($"{property.Name} = {value}");
                                                 }
                                             }
+                                            Trace.WriteLine("[Updater] Successfully read all properties");
                                         }
 
                                         else
@@ -134,8 +135,10 @@ public class ToolAssemblyLoader : IToolAssemblyLoader
         }
         catch (Exception ex)
         {
-            throw new Exception($"Unexpected error: {ex.Message}", ex);
+            Trace.WriteLine($"Unexpected error: {ex.Message}");
         }
+
+        Trace.WriteLine("[Updater] Successfully created map with tool properties");
         return toolPropertyMap;
     }
 }

@@ -95,8 +95,8 @@
             </ScrollViewer>
 
 
-            <Button Content="Upload Analyzers" Width="150" Height="35"/>
-            <Button Content="Check for Updates" Width="150" Height="35"/>
+            <Button Content="Sync Up" Width="150" Height="35" Click="SyncUpButton_Click"/>
+
 
             <TextBlock Text="Log Details:" FontSize="16" FontWeight="Bold" Margin="0,20,0,10" Foreground="Black"/>
             <ScrollViewer Height="131" VerticalScrollBarVisibility="Auto" Width="748" BorderThickness="2" BorderBrush="Black">

@@ -19,6 +19,7 @@ namespace Updater;
 public class Client
 {
     private readonly ICommunicator _communicator;
+    private readonly static string _clientDirectory = @"C:\received";
 
     public Client(ICommunicator communicator)
     {
@@ -27,22 +28,22 @@ public class Client
 
     public async Task<string> StartAsync(string ipAddress, string port)
     {
-        ReceiveData($"Attempting to connect to server at {ipAddress}:{port}...");
+        UpdateUILogs($"Attempting to connect to server at {ipAddress}:{port}...");
         string result = await Task.Run(() => _communicator.Start(ipAddress, port));
         if (result == "success")
         {
-            ReceiveData("Successfully connected to server.");
+            UpdateUILogs("Successfully connected to server.");
         }
         else
         {
-            ReceiveData("Failed to connect to server.");
+            UpdateUILogs("Failed to connect to server.");
         }
         return result;
     }
 
     public void Subscribe()
     {
-        _communicator.Subscribe("ClientMetadataHandler", new ClientMetadataHandler(_communicator));
+        _communicator.Subscribe("FileTransferHandler", new FileTransferHandler(_communicator));
         SyncUp();
     }
 
@@ -50,24 +51,25 @@ public class Client
     {
         string serializedMetaData = Utils.SerializedMetadataPacket();
 
-        // Sending data as ClientMetadataHandler
-        ReceiveData("Syncing Up with the server");
-        Trace.WriteLine("[Updater] Sending data as ClientMetadataHandler...");
-        _communicator.Send(serializedMetaData, "ClientMetadataHandler", null);
+        // Sending data as FileTransferHandler
+        UpdateUILogs("Syncing Up with the server!");
+        Trace.WriteLine("[Updater] Sending metadata of client as FileTransferHandler...");
+        _communicator.Send(serializedMetaData, "FileTransferHandler", null);
     }
 
     public void Stop()
     {
-        ReceiveData("Client disconnected");
+        UpdateUILogs("Client disconnected");
         _communicator.Stop();
     }
 
 
-    public class ClientMetadataHandler : INotificationHandler
+    public class FileTransferHandler : INotificationHandler
     {
         private readonly ICommunicator _communicator;
+        private static Guid guid;
 
-        public ClientMetadataHandler(ICommunicator communicator)
+        public FileTransferHandler(ICommunicator communicator)
         {
             _communicator = communicator;
         }
@@ -81,15 +83,8 @@ public class Client
                 // Check PacketType
                 switch (dataPacket.DataPacketType)
                 {
-                    case DataPacket.PacketType.Metadata:
-                        MetadataHandler(dataPacket, communicator);
-                        break;
                     case DataPacket.PacketType.Broadcast:
-                        Console.WriteLine("Found broadcast files");
                         BroadcastHandler(dataPacket, communicator);
-                        break;
-                    case DataPacket.PacketType.ClientFiles:
-                        ClientFilesHandler(dataPacket);
                         break;
                     case DataPacket.PacketType.Differences:
                         DifferencesHandler(dataPacket, communicator);
@@ -104,25 +99,14 @@ public class Client
             }
         }
 
-        private static void MetadataHandler(DataPacket dataPacket, ICommunicator communicator)
-        {
-            try
-            {
-                throw new NotImplementedException();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in MetadataHandler: {ex.Message}");
-            }
-        }
-
         private static void BroadcastHandler(DataPacket dataPacket, ICommunicator communicator)
         {
             try
             {
-                ReceiveData("Recieved Broadcast from server");
                 // File list
                 List<FileContent> fileContentList = dataPacket.FileContentList;
+
+                UpdateUILogs($"Received {fileContentList.Count} new files from server");
 
                 // Get files
                 foreach (FileContent fileContent in fileContentList)
@@ -131,7 +115,8 @@ public class Client
                     {
                         // Deserialize the content based on expected format
                         string content = Utils.DeserializeObject<string>(fileContent.SerializedContent);
-                        string filePath = Path.Combine(@"C:\recieved", fileContent.FileName);
+                        string filePath = Path.Combine(_clientDirectory, fileContent.FileName);
+                        UpdateUILogs($"Saving files to {filePath}");
                         bool status = Utils.WriteToFileFromBinary(filePath, content);
                         if (!status)
                         {
@@ -139,11 +124,11 @@ public class Client
                         }
                     }
                 }
-                ReceiveData("Up-to-date with the server");
+                UpdateUILogs("You are up-to-date with the server!");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Updater] Error in BroadcastHandler: {ex.Message}");
+                Trace.WriteLine($"[Updater] Error in BroadcastHandler: {ex.Message}");
             }
         }
 
@@ -155,16 +140,17 @@ public class Client
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in ClientFilesHandler: {ex.Message}");
+                Trace.WriteLine($"Error in ClientFilesHandler: {ex.Message}");
             }
         }
 
         private static void DifferencesHandler(DataPacket dataPacket, ICommunicator communicator)
         {
+            guid = Guid.NewGuid();
             try
             {
-                ReceiveData("Recieved files from Server");
                 List<FileContent> fileContentList = dataPacket.FileContentList;
+                UpdateUILogs($"Recieved {fileContentList.Count - 1} files from Server");
 
                 // Deserialize the 'differences' file content
                 FileContent differenceFile = fileContentList[0];
@@ -185,6 +171,7 @@ public class Client
                     if (fileContent == differenceFile)
                     {
                         continue;
+
                     }
                     if (fileContent != null && fileContent.SerializedContent != null)
                     {
@@ -202,11 +189,15 @@ public class Client
                             content = Utils.DeserializeObject<string>(decodedContent);
                         }
 
-                        string filePath = Path.Combine(@"C:\temp", fileContent.FileName ?? "Unnamed_file");
+                        string filePath = Path.Combine(_clientDirectory, guid.ToString() + fileContent.FileName); //+ Guid.NewGuid().ToString()
                         bool status = Utils.WriteToFileFromBinary(filePath, content);
                         if (!status)
                         {
                             throw new Exception("[Updater] Failed to write file");
+                        }
+                        else
+                        {
+                            UpdateUILogs($"Writing file {filePath}");
                         }
                     }
                 }
@@ -218,10 +209,10 @@ public class Client
                     .Distinct()
                     .ToList();
 
-                ReceiveData("Recieved request for files from Server");
+                UpdateUILogs("Processing requested files from Server");
 
                 // Create list of FileContent to send back
-                List<FileContent> fileContentToSend = new List<FileContent>();
+                List<FileContent> fileContentToSend = [];
 
                 foreach (string filename in filenameList)
                 {
@@ -231,7 +222,7 @@ public class Client
                     }
                     if (filename != null)
                     {
-                        string filePath = Path.Combine(@"C:\temp", filename);
+                        string filePath = Path.Combine(_clientDirectory, filename);
                         string? content = Utils.ReadBinaryFile(filePath);
 
                         if (content == null)
@@ -256,9 +247,9 @@ public class Client
                 // Serialize and send DataPacket
                 string? serializedDataPacket = Utils.SerializeObject(dataPacketToSend);
 
-                ReceiveData("Sending requested files to server");
+                UpdateUILogs($"Sending {fileContentToSend.Count} requested files to server");
                 Trace.WriteLine("Sending files to server");
-                communicator.Send(serializedDataPacket, "ClientMetadataHandler", null);
+                communicator.Send(serializedDataPacket, "FileTransferHandler", null);
             }
             catch (Exception ex)
             {
@@ -271,8 +262,8 @@ public class Client
             try
             {
                 
-                Trace.WriteLine($"[Updater] ClientMetadataHandler received data");
-                ReceiveData($"ClientMetadataHandler received data");
+                Trace.WriteLine($"[Updater] FileTransferHandler received data");
+                UpdateUILogs($"FileTransferHandler received data");
                 PacketDemultiplexer(serializedData, _communicator);
             }
             catch (Exception ex)
@@ -281,9 +272,10 @@ public class Client
             }
         }
     }
+
     public static event Action<string>? OnLogUpdate;
 
-    public static void ReceiveData(string data)
+    public static void UpdateUILogs(string data)
     {
         OnLogUpdate?.Invoke(data); 
     }

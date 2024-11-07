@@ -12,6 +12,7 @@
 
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using Updater;
 
 namespace ViewModels;
@@ -25,7 +26,7 @@ public class ServerViewModel : INotifyPropertyChanged
     {
         _server = new Server();
         _logServiceViewModel = logServiceViewModel;
-        Server.NotificationReceived += AddLogMessage;
+        Server.OnLogUpdate += AddLogMessage;
 
         // Create a named mutex
         _mutex = new Mutex(false, "Global\\MyUniqueServerMutexName");
@@ -57,8 +58,7 @@ public class ServerViewModel : INotifyPropertyChanged
     private void AddLogMessage(string message)
     {
         _logServiceViewModel.UpdateLogDetails(message);
-    }
-
+    }    
 
     public event PropertyChangedEventHandler? PropertyChanged;
 

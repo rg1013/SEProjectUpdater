@@ -22,25 +22,21 @@ namespace ViewModels;
 /// </summary>
 public class ToolListViewModel : INotifyPropertyChanged
 {
-    public ObservableCollection<Tool> AvailableToolsList { get; set; }
+    public ObservableCollection<Tool>? AvailableToolsList { get; set; }
 
     /// <summary>
     /// Loads available analyzers from the specified folder using the DllLoader.
     /// Populates the AnalyzerInfo property with the retrieved data.
     /// </summary>
-    public ToolListViewModel()
-    {
-        LoadAvailableTools();
-    }
+    public ToolListViewModel() => LoadAvailableTools();
     public void LoadAvailableTools()
     {
-        ToolAssemblyLoader dllLoader = new ToolAssemblyLoader();
-        Dictionary<string, List<string>> hashMap = dllLoader.LoadToolsFromFolder(@"C:\temp");
+        Dictionary<string, List<string>> hashMap = ToolAssemblyLoader.LoadToolsFromFolder(@"C:\temp");
 
         if (hashMap.Count > 0)
         {
             int rowCount = hashMap.Values.First().Count;
-            AvailableToolsList = new ObservableCollection<Tool>();
+            AvailableToolsList = [];
 
             for (int i = 0; i < rowCount; i++)
             {
@@ -77,14 +73,14 @@ public class ToolListViewModel : INotifyPropertyChanged
     /// </summary>
     public ObservableCollection<Tool> ToolInfo
     {
-        get => AvailableToolsList;
+        get => AvailableToolsList ?? [];
         set {
             AvailableToolsList = value;
             OnPropertyChanged(nameof(ToolInfo));
         }
     }
 
-    public event PropertyChangedEventHandler PropertyChanged;
+    public event PropertyChangedEventHandler? PropertyChanged;
 
     protected void OnPropertyChanged(string propertyName)
     {

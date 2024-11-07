@@ -10,8 +10,11 @@
  * Description = Initialize a page for Updater 
  *****************************************************************************/
 
+using Networking.Communication;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using Updater;
 using ViewModels;
 
 namespace UI.Views
@@ -22,10 +25,10 @@ namespace UI.Views
     public partial class UpdaterPage : Page
     {
         public LogServiceViewModel LogServiceViewModel { get; }
-        private FileChangeNotifier _analyzerNotificationService;
-        private ToolListViewModel _toolListViewModel;
-        private ServerViewModel _serverViewModel; // Added server view model 
-        private ClientViewModel _clientViewModel; // Added client view model 
+        private readonly FileChangeNotifier _analyzerNotificationService;
+        private readonly ToolListViewModel _toolListViewModel;
+        private readonly ServerViewModel _serverViewModel; // Added server view model 
+        private readonly ClientViewModel _clientViewModel; // Added client view model 
 
         public UpdaterPage()
         {
@@ -34,6 +37,8 @@ namespace UI.Views
             _toolListViewModel.LoadAvailableTools();
             ListView listView = (ListView)this.FindName("ToolViewList");
             listView.DataContext = _toolListViewModel;
+
+
 
             _analyzerNotificationService = new FileChangeNotifier();
             _analyzerNotificationService.MessageReceived += OnMessageReceived;
@@ -64,7 +69,7 @@ namespace UI.Views
             // Check if the server can be started 
             if (_serverViewModel.CanStartServer())
             {
-                string ip = "10.128.4.16"; // Assume you have an IpTextBox for IP input 
+                string ip = "10.32.2.232"; // Assume you have an IpTextBox for IP input 
                 string port = "60091"; // Assume you have a PortTextBox for Port input 
 
                 _serverViewModel.StartServer(ip, port); // Call to start the server 
@@ -137,6 +142,9 @@ namespace UI.Views
                 ConnectButton.IsEnabled = true; // Enable Connect button
                 DisconnectButton.IsEnabled = false; // Disable Disconnect button
             }
+        }
+        private void SyncUpButton_Click(object sender, RoutedEventArgs e)
+        {
         }
     }
 }
