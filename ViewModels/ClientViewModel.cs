@@ -20,22 +20,8 @@ namespace ViewModels
     public class ClientViewModel : INotifyPropertyChanged
     {
         private Client _client;
-        private string _statusMessage = string.Empty;
         private bool _isConnected;
         private LogServiceViewModel _logServiceViewModel;
-
-        public string StatusMessage
-        {
-            get => _statusMessage;
-            set
-            {
-                if (_statusMessage != value)
-                {
-                    _statusMessage = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
 
         public bool IsConnected
         {
@@ -69,17 +55,14 @@ namespace ViewModels
 
         public async Task ConnectAsync()
         {
-            StatusMessage = "Connecting...";
             string result = await _client.StartAsync("10.32.2.232", "60091");
             if (result == "success")
             {
                 IsConnected = true;
-                StatusMessage = "Connected to server!";
                 _client.Subscribe();
             }
             else
             {
-                StatusMessage = "Failed to connect to server.";
                 UpdateLog("Failed to connect to server."); // Log the failure
             }
         }
@@ -88,7 +71,6 @@ namespace ViewModels
         {
             _client.Stop();
             IsConnected = false;
-            StatusMessage = "Disconnected from server.";
             UpdateLog("Disconnected from server."); // Log the disconnection
         }
 

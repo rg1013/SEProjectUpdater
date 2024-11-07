@@ -157,11 +157,9 @@ public class Server
                 switch (dataPacket.DataPacketType)
                 {
                     case DataPacket.PacketType.Metadata:
-                        UpdateUILogs("Received Metadata of client");
                         MetadataHandler(dataPacket, communicator, clientID);
                         break;
                     case DataPacket.PacketType.ClientFiles:
-                        UpdateUILogs("Received files from client");
                         ClientFilesHandler(dataPacket, communicator, clientID);
                         break;
                     default:
@@ -170,7 +168,7 @@ public class Server
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in PacketDemultiplexer: {ex.Message}");
+                Trace.WriteLine($"Error in PacketDemultiplexer: {ex.Message}");
             }
         }
 
@@ -181,7 +179,7 @@ public class Server
                 // Extract metadata of client directory
                 List<FileContent> fileContents = dataPacket.FileContentList;
 
-                if (!fileContents.Any())
+                if (fileContents.Count == 0)
                 {
                     throw new Exception("No file content received in the data packet.");
                 }
@@ -207,6 +205,7 @@ public class Server
                     throw new Exception("[Updater] Deserialized client metadata is null");
                 }
 
+                UpdateUILogs("Metadata of client received");
                 Trace.WriteLine("[Updater]: Metadata from client received");
 
                 // Generate metadata of server
@@ -254,12 +253,16 @@ public class Server
                 // Retrieve and add unique server files to fileContentsToSend
                 foreach (string filename in comparerInstance.UniqueServerFiles)
                 {
+                    if(filename == fileContentsToSend[0].FileName)
+                    {
+                        continue;
+                    }
                     string filePath = Path.Combine(_serverDirectory, filename);
                     string? content = Utils.ReadBinaryFile(filePath);
 
                     if (content == null)
                     {
-                        Console.WriteLine($"Warning: Content of file {filename} is null, skipping.");
+                        Trace.WriteLine($"[Updater] Warning: Content of file {filename} is null, skipping.");
                         continue; // Skip to the next file instead of throwing an exception
                     }
 
@@ -273,12 +276,12 @@ public class Server
                         continue; // Skip to next file if serialization fails
                     }
 
-                    FileContent fileContentToSend = new FileContent(filename, serializedFileContent);
+                    FileContent fileContentToSend = new(filename, serializedFileContent);
                     fileContentsToSend.Add(fileContentToSend);
                 }
 
                 // Create DataPacket after all FileContents are ready
-                DataPacket dataPacketToSend = new DataPacket(DataPacket.PacketType.Differences, fileContentsToSend);
+                DataPacket dataPacketToSend = new(DataPacket.PacketType.Differences, fileContentsToSend);
                 Trace.WriteLine($"[Updater] Total files to send: {fileContentsToSend.Count}");
 
                 // Serialize DataPacket
@@ -286,17 +289,19 @@ public class Server
 
                 try
                 {
-                    UpdateUILogs($"Sending {fileContentsToSend.Count} files to client and waiting to recieve files from client {clientID}");
+                    UpdateUILogs($"Sending {fileContentsToSend.Count} files to client and waiting to receive files from client {clientID}");
                     communicator.Send(serializedDataPacket, "FileTransferHandler", clientID); 
                 }
                 catch (Exception ex)
                 {
                     Trace.WriteLine($"[Updater] Error sending data to client: {ex.Message}");
+                    UpdateUILogs($"Error sending data to client: {ex.Message}");
                 }
             }
             catch (Exception ex)
             {
                 Trace.WriteLine($"[Updater] Error sending data to client: {ex.Message}");
+                UpdateUILogs($"Error sending data to client: {ex.Message}");
             }
         }
 
@@ -305,45 +310,52 @@ public class Server
             guid = Guid.NewGuid();
             try
             {
-                UpdateUILogs("Recieved files from client");
                 // File list
                 List<FileContent> fileContentList = dataPacket.FileContentList;
+                UpdateUILogs($"Received {fileContentList.Count} files from client");
 
-                // Get files
-                foreach (FileContent fileContent in fileContentList)
+                if (fileContentList.Count > 0)
                 {
-                    if (fileContent != null && fileContent.SerializedContent != null && fileContent.FileName != null)
+                    // Get files
+                    foreach (FileContent fileContent in fileContentList)
                     {
-                        string content = Utils.DeserializeObject<string>(fileContent.SerializedContent);
-                        fileContent.FileName = guid.ToString() + fileContent.FileName;
-                        string filePath = Path.Combine(_serverDirectory, fileContent.FileName);
-                        bool status = Utils.WriteToFileFromBinary(filePath, content);
-
-                        if (!status)
+                        if (fileContent != null && fileContent.SerializedContent != null && fileContent.FileName != null)
                         {
-                            throw new Exception("Failed to write file");
+                            string content = Utils.DeserializeObject<string>(fileContent.SerializedContent);
+                            fileContent.FileName = guid.ToString() + fileContent.FileName;
+                            string filePath = Path.Combine(_serverDirectory, fileContent.FileName);
+                            bool status = Utils.WriteToFileFromBinary(filePath, content);
+
+                            if (!status)
+                            {
+                                throw new Exception("Failed to write file");
+                            }
                         }
                     }
+
+                    UpdateUILogs("Successfully saved all new files");
+                    Trace.WriteLine("[Updater] Successfully received client's files");
+
+                    // Broadcast client's new files to all clients
+                    dataPacket.DataPacketType = DataPacket.PacketType.Broadcast;
+
+                    // Serialize packet
+                    string serializedPacket = Utils.SerializeObject(dataPacket);
+
+                    UpdateUILogs($"Broadcasting the new {fileContentList.Count} files");
+                    Trace.WriteLine("[Updater] Broadcasting the new files");
+                    try
+                    {
+                        communicator.Send(serializedPacket, "FileTransferHandler", null); // Broadcast to all clients
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.WriteLine($"[Updater] Error sending data to client: {ex.Message}");
+                    }
                 }
-
-                UpdateUILogs("Successfully received client's files");
-                Trace.WriteLine("[Updater] Successfully received client's files");
-
-                // Broadcast client's new files to all clients
-                dataPacket.DataPacketType = DataPacket.PacketType.Broadcast;
-
-                // Serialize packet
-                string serializedPacket = Utils.SerializeObject(dataPacket);
-
-                UpdateUILogs("Broadcasting the new files");
-                Trace.WriteLine("[Updater] Broadcasting the new files");
-                try
+                else
                 {
-                    communicator.Send(serializedPacket, "FileTransferHandler", null); // Broadcast to all clients
-                }
-                catch (Exception ex)
-                {
-                    Trace.WriteLine($"[Updater] Error sending data to client: {ex.Message}");
+                    UpdateUILogs("No new files found to broadcast");
                 }
             }
             catch (Exception ex)

@@ -78,4 +78,36 @@ public class DirectoryMetadataGenerator
         Byte[] hashBytes = sha256.ComputeHash(stream);
         return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
     }
+
+    /// <summary>
+    /// Computes SHA-256 hash from string content directly.
+    /// </summary>
+    /// <param name="content">The content to hash.</param>
+    /// <returns>SHA-256 hash of the content as a string.</returns>
+    public static string ComputeFileHashFromContent(string content)
+    {
+        byte[] contentBytes;
+
+        // Check if the content is a base64 string
+        if (content.StartsWith("data:", StringComparison.InvariantCultureIgnoreCase))
+        {
+            content = content.Split(',')[1]; // Strip base64 data URI prefix
+        }
+
+        // Try to decode base64
+        try
+        {
+            contentBytes = Convert.FromBase64String(content);
+        }
+        catch (FormatException)
+        {
+            // If not base64, treat it as UTF-8 encoded string
+            contentBytes = System.Text.Encoding.UTF8.GetBytes(content);
+        }
+
+        using SHA256 sha256 = SHA256.Create();
+        byte[] hashBytes = sha256.ComputeHash(contentBytes);
+        return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+    }
+
 }

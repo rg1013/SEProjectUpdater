@@ -16,15 +16,10 @@ using System.Diagnostics;
 
 namespace Updater;
 
-public class Client
+public class Client(ICommunicator communicator)
 {
-    private readonly ICommunicator _communicator;
+    private readonly ICommunicator _communicator = communicator;
     private readonly static string _clientDirectory = @"C:\received";
-
-    public Client(ICommunicator communicator)
-    {
-        _communicator = communicator;
-    }
 
     public async Task<string> StartAsync(string ipAddress, string port)
     {
@@ -49,11 +44,12 @@ public class Client
 
     public void SyncUp()
     {
+        UpdateUILogs("Syncing Up with the server!");
         string serializedMetaData = Utils.SerializedMetadataPacket();
 
         // Sending data as FileTransferHandler
-        UpdateUILogs("Syncing Up with the server!");
         Trace.WriteLine("[Updater] Sending metadata of client as FileTransferHandler...");
+
         _communicator.Send(serializedMetaData, "FileTransferHandler", null);
     }
 
@@ -64,15 +60,10 @@ public class Client
     }
 
 
-    public class FileTransferHandler : INotificationHandler
+    public class FileTransferHandler(ICommunicator communicator) : INotificationHandler
     {
-        private readonly ICommunicator _communicator;
+        private readonly ICommunicator _communicator = communicator;
         private static Guid guid;
-
-        public FileTransferHandler(ICommunicator communicator)
-        {
-            _communicator = communicator;
-        }
 
         public static void PacketDemultiplexer(string serializedData, ICommunicator communicator)
         {
@@ -96,6 +87,7 @@ public class Client
             catch (Exception ex)
             {
                 Trace.WriteLine($"[Updater] Error in PacketDemultiplexer: {ex.Message}");
+                UpdateUILogs($"Error while trying to read the data packet: {ex.Message}");
             }
         }
 
@@ -106,7 +98,7 @@ public class Client
                 // File list
                 List<FileContent> fileContentList = dataPacket.FileContentList;
 
-                UpdateUILogs($"Received {fileContentList.Count} new files from server");
+                UpdateUILogs($"Received broadcast of {fileContentList.Count} new files from server");
 
                 // Get files
                 foreach (FileContent fileContent in fileContentList)
@@ -116,7 +108,9 @@ public class Client
                         // Deserialize the content based on expected format
                         string content = Utils.DeserializeObject<string>(fileContent.SerializedContent);
                         string filePath = Path.Combine(_clientDirectory, fileContent.FileName);
-                        UpdateUILogs($"Saving files to {filePath}");
+
+                        UpdateUILogs($"Saving {filePath}");
+
                         bool status = Utils.WriteToFileFromBinary(filePath, content);
                         if (!status)
                         {
@@ -129,18 +123,7 @@ public class Client
             catch (Exception ex)
             {
                 Trace.WriteLine($"[Updater] Error in BroadcastHandler: {ex.Message}");
-            }
-        }
-
-        private static void ClientFilesHandler(DataPacket dataPacket)
-        {
-            try
-            {
-                throw new NotImplementedException();
-            }
-            catch (Exception ex)
-            {
-                Trace.WriteLine($"Error in ClientFilesHandler: {ex.Message}");
+                UpdateUILogs($"Error in receiving broadcast: {ex.Message}");
             }
         }
 
@@ -150,12 +133,13 @@ public class Client
             try
             {
                 List<FileContent> fileContentList = dataPacket.FileContentList;
-                UpdateUILogs($"Recieved {fileContentList.Count - 1} files from Server");
+                UpdateUILogs($"Recieved {fileContentList.Count} files from Server");
 
                 // Deserialize the 'differences' file content
                 FileContent differenceFile = fileContentList[0];
                 string? serializedDifferences = differenceFile.SerializedContent;
                 string? differenceFileName = differenceFile.FileName;
+                UpdateUILogs($"Extracted difference file {differenceFileName}");
 
                 if (serializedDifferences == null)
                 {
@@ -168,14 +152,15 @@ public class Client
                 // Process additional files in the list
                 foreach (FileContent fileContent in fileContentList)
                 {
-                    if (fileContent == differenceFile)
+                    if (fileContent == differenceFile || fileContent.FileName == differenceFileName)
                     {
                         continue;
-
                     }
+
                     if (fileContent != null && fileContent.SerializedContent != null)
                     {
                         string content;
+
                         // Check if the SerializedContent is base64 or XML by detecting XML declaration
                         if (fileContent.SerializedContent.StartsWith("<?xml"))
                         {
@@ -189,8 +174,9 @@ public class Client
                             content = Utils.DeserializeObject<string>(decodedContent);
                         }
 
-                        string filePath = Path.Combine(_clientDirectory, guid.ToString() + fileContent.FileName); //+ Guid.NewGuid().ToString()
+                        string filePath = Path.Combine(_clientDirectory, guid.ToString() + fileContent.FileName); 
                         bool status = Utils.WriteToFileFromBinary(filePath, content);
+
                         if (!status)
                         {
                             throw new Exception("[Updater] Failed to write file");
@@ -220,23 +206,13 @@ public class Client
                     {
                         continue;
                     }
+
                     if (filename != null)
                     {
                         string filePath = Path.Combine(_clientDirectory, filename);
-                        string? content = Utils.ReadBinaryFile(filePath);
-
-                        if (content == null)
-                        {
-                            throw new Exception("Failed to read file");
-                        }
-
-                        string? serializedContent = Utils.SerializeObject(content);
-                        if (serializedContent == null)
-                        {
-                            throw new Exception("Failed to serialize content");
-                        }
-
-                        FileContent fileContent = new FileContent(filename, serializedContent);
+                        string? content = Utils.ReadBinaryFile(filePath) ?? throw new Exception("Failed to read file");
+                        string? serializedContent = Utils.SerializeObject(content) ?? throw new Exception("Failed to serialize content");
+                        FileContent fileContent = new(filename, serializedContent);
                         fileContentToSend.Add(fileContent);
                     }
                 }
@@ -248,12 +224,14 @@ public class Client
                 string? serializedDataPacket = Utils.SerializeObject(dataPacketToSend);
 
                 UpdateUILogs($"Sending {fileContentToSend.Count} requested files to server");
-                Trace.WriteLine("Sending files to server");
+                Trace.WriteLine($"[Updater] Sending {fileContentToSend.Count} requested files to server");
+
                 communicator.Send(serializedDataPacket, "FileTransferHandler", null);
             }
             catch (Exception ex)
             {
                 Trace.WriteLine($"[Updater] Error in DifferencesHandler: {ex.Message}");
+                UpdateUILogs($"Error in DifferencesHandler: {ex.Message}");
             }
         }
 
@@ -263,12 +241,14 @@ public class Client
             {
                 
                 Trace.WriteLine($"[Updater] FileTransferHandler received data");
-                UpdateUILogs($"FileTransferHandler received data");
+                UpdateUILogs($"Client have successfully received data");
+
                 PacketDemultiplexer(serializedData, _communicator);
             }
             catch (Exception ex)
             {
                 Trace.WriteLine($"[Updater] Error in OnDataReceived: {ex.Message}");
+                UpdateUILogs($"[Updater] Error in receiving data: {ex.Message}");
             }
         }
     }

@@ -18,34 +18,34 @@ using Updater;
 namespace ViewModels;
 
 /// <summary>
-/// Class to populate list of available analyzers for server-side operations
+/// Class to populate list of available tools for server-side operations
 /// </summary>
 public class ToolListViewModel : INotifyPropertyChanged
 {
     public ObservableCollection<Tool>? AvailableToolsList { get; set; }
 
     /// <summary>
-    /// Loads available analyzers from the specified folder using the DllLoader.
-    /// Populates the AnalyzerInfo property with the retrieved data.
+    /// Loads available tools from the specified folder using the DllLoader.
+    /// Populates the AvailableToolsList property with the retrieved data.
     /// </summary>
     public ToolListViewModel() => LoadAvailableTools();
     public void LoadAvailableTools()
     {
-        Dictionary<string, List<string>> hashMap = ToolAssemblyLoader.LoadToolsFromFolder(@"C:\temp");
+        Dictionary<string, List<string>> ToolsInfoMap = ToolAssemblyLoader.LoadToolsFromFolder(@"C:\temp");
 
-        if (hashMap.Count > 0)
+        if (ToolsInfoMap.Count > 0)
         {
-            int rowCount = hashMap.Values.First().Count;
+            int rowCount = ToolsInfoMap.Values.First().Count;
             AvailableToolsList = [];
 
             for (int i = 0; i < rowCount; i++)
             {
                 var newTool = new Tool {
-                    ID = hashMap["Id"][i],
-                    Version = hashMap["Version"][i],
-                    Description = hashMap["Description"][i],
-                    Deprecated = hashMap["IsDeprecated"][i],
-                    CreatedBy = hashMap["CreatorName"][i]
+                    ID = ToolsInfoMap["Id"][i],
+                    Version = ToolsInfoMap["Version"][i],
+                    Description = ToolsInfoMap["Description"][i],
+                    Deprecated = ToolsInfoMap["IsDeprecated"][i],
+                    CreatedBy = ToolsInfoMap["CreatorName"][i]
                 };
 
                 // Check if the tool is already in the list
@@ -66,18 +66,6 @@ public class ToolListViewModel : INotifyPropertyChanged
         }
 
         OnPropertyChanged(nameof(AvailableToolsList));
-    }
-
-    /// <summary>
-    /// Gets or sets the list of available analyzers.
-    /// </summary>
-    public ObservableCollection<Tool> ToolInfo
-    {
-        get => AvailableToolsList ?? [];
-        set {
-            AvailableToolsList = value;
-            OnPropertyChanged(nameof(ToolInfo));
-        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

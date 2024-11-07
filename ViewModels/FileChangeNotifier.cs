@@ -33,17 +33,23 @@ public class FileChangeNotifier : INotifyPropertyChanged
     private List<string>? _deletedFiles;
     //Timer to debounce file change events for batch processing
     private Timer? _timer;
+
+    private LogServiceViewModel _logServiceViewModel;
+    private ToolListViewModel _toolListViewModel;
+
     public event Action<string>? MessageReceived;
 
     /// <summary>
     /// Initializes a new instance of the FileChangeNotifier class and starts monitoring the folder.
     /// </summary>
-    public FileChangeNotifier()
+    public FileChangeNotifier(LogServiceViewModel logServiceViewModel, ToolListViewModel toolListViewModel)
     {
         //Intialize the list for created and deleted files.
         _createdFiles = new List<string>();
         _deletedFiles = new List<string>();
         StartMonitoring();
+        _logServiceViewModel = logServiceViewModel;
+        _toolListViewModel = toolListViewModel;
     }
 
     /// <summary>
@@ -173,7 +179,10 @@ public class FileChangeNotifier : INotifyPropertyChanged
         {
             string v = message.ToString();
             MessageStatus = v;
-            MessageReceived?.Invoke(v);
+            _logServiceViewModel.UpdateLogDetails(MessageStatus);
+            _logServiceViewModel.ShowNotification(MessageStatus);
+            // Loading Tools info everytime a new notification arrives
+            _toolListViewModel.LoadAvailableTools();
         }
     }
 
