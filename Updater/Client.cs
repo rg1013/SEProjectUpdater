@@ -20,6 +20,7 @@ public class Client(ICommunicator communicator)
 {
     private readonly ICommunicator _communicator = communicator;
     private readonly static string _clientDirectory = @"C:\received";
+    // private readonly static string _clientDirectory = AppConstants.ToolsFolderPath;
 
     public async Task<string> StartAsync(string ipAddress, string port)
     {
