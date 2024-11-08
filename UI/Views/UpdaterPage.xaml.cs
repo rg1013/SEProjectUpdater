@@ -10,11 +10,8 @@
  * Description = Initialize a page for Updater 
  *****************************************************************************/
 
-using Networking.Communication;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
-using Updater;
 using ViewModels;
 
 namespace UI.Views
@@ -28,9 +25,8 @@ namespace UI.Views
         public LogServiceViewModel LogServiceViewModel { get; }
         private readonly FileChangeNotifier _toolsNotificationService;
         private readonly ToolListViewModel _toolListViewModel;
-        private readonly ServerViewModel _serverViewModel; // Added server view model 
-        private readonly ClientViewModel _clientViewModel; // Added client view model 
-       
+        private readonly ServerViewModel _serverViewModel;
+        private readonly ClientViewModel _clientViewModel; 
         public UpdaterPage()
         {
             InitializeComponent();
@@ -43,8 +39,8 @@ namespace UI.Views
             LogServiceViewModel = new LogServiceViewModel();
             DataContext = LogServiceViewModel;
 
-            _serverViewModel = new ServerViewModel(LogServiceViewModel); // Initialize the server view model 
-            _clientViewModel = new ClientViewModel(LogServiceViewModel); // Initialize the client view model 
+            _serverViewModel = new ServerViewModel(LogServiceViewModel); 
+            _clientViewModel = new ClientViewModel(LogServiceViewModel);
             _toolsNotificationService = new FileChangeNotifier(LogServiceViewModel, _toolListViewModel);
 
         }
@@ -53,7 +49,8 @@ namespace UI.Views
             // Check if the server can be started 
             if (_serverViewModel.CanStartServer())
             {
-                string ip = "10.32.2.232"; 
+                // string ip = "10.32.2.232"; 
+                string ip = "10.128.4.178"; 
                 string port = "60091";
 
                 _serverViewModel.StartServer(ip, port);
@@ -93,12 +90,10 @@ namespace UI.Views
 
                 if (_clientViewModel.IsConnected)
                 {
-                    LogServiceViewModel.UpdateLogDetails("Successfully connected to server!\n");
                     DisconnectButton.IsEnabled = true;
                 }
                 else
                 {
-                    LogServiceViewModel.UpdateLogDetails("Failed to connect to server.\n"); 
                     StartServerButton.IsEnabled = true; 
                     StopServerButton.IsEnabled = false; 
                     ConnectButton.IsEnabled = true;
@@ -111,7 +106,6 @@ namespace UI.Views
             if (_clientViewModel.CanDisconnect)
             {
                 _clientViewModel.Disconnect();
-                LogServiceViewModel.UpdateLogDetails("Disconnected from server.\n"); 
 
                 StartServerButton.IsEnabled = true; 
                 StopServerButton.IsEnabled = false; 

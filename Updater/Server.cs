@@ -20,7 +20,7 @@ namespace Updater;
 public class Server
 {
     static readonly SemaphoreSlim semaphore = new(1, 1); // Allow one client at a time
-    private readonly static string _serverDirectory = @"C:\temp";
+    private readonly static string _serverDirectory = AppConstants.ToolsFolderPath;
 
     private ICommunicator? _communicator;
     public DateTime _lastSyncTime { get; set; } = DateTime.MinValue;
