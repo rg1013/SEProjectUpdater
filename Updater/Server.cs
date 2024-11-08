@@ -22,6 +22,7 @@ public class Server
     static readonly AutoResetEvent autoResetEvent = new(true);
     static readonly SemaphoreSlim semaphore = new(1, 1); // Allow one client at a time
     private readonly static string _serverDirectory = AppConstants.ToolsFolderPath;
+    private static Queue<string> _queue = new();
 
     private ICommunicator? _communicator;
     public DateTime _lastSyncTime { get; set; } = DateTime.MinValue;
@@ -357,13 +358,16 @@ public class Server
             }
             finally
             {
+                UpdateUILogs("Setting autoResetEvent and dequeuing");
+                UpdateUILogs($"{_queue.Count} and {autoResetEvent.ToString}");
+                _queue.Dequeue();
                 autoResetEvent.Set();
             }
         }
 
         public void OnDataReceived(string serializedData)
         {
-            //semaphore.Wait(); // Wait until it's safe to enter
+            semaphore.Wait(); // Wait until it's safe to enter
             try
             {
                 Trace.WriteLine("[Updater] FileTransferHandler received data");
@@ -383,10 +387,10 @@ public class Server
             {
                 Trace.WriteLine($"[Updater] Deserialization failed: {ex.Message}");
             }
-            //finally
-            //{
-              //  semaphore.Release(); // Release the semaphore
-            //}
+           finally
+            {
+                semaphore.Release(); // Release the semaphore
+            }
         }
 
         public void OnClientJoined(TcpClient socket)
@@ -401,9 +405,15 @@ public class Server
 
                 clientConnections.Add(clientId, socket); // Add client connection to the dictionary
                 _communicator.AddClient(clientId, socket); // Use the unique client ID
+                _queue.Enqueue(clientId);
 
-                // Start client processing
-                StartClientProcessing(clientId, socket);
+                UpdateUILogs($"State of queue OnClientJoined: {_queue.Count} and autoResetEvent: {autoResetEvent}");
+
+                while (_queue.Count > 0)
+                {
+                    Thread thread = new Thread(new ThreadStart(SendSignalToClient));
+                    thread.Start();
+                }
             }
             catch (Exception ex)
             {
@@ -411,19 +421,15 @@ public class Server
             }
         }
 
-        private void StartClientProcessing(string clientId, TcpClient socket)
-        {
-            // Start a thread to send the signal to the client
-            Task.Run(() => SendSignalToClient(clientId));
-        }
 
-
-        public void SendSignalToClient(string clientId)
+        public void SendSignalToClient()
         {
             autoResetEvent.WaitOne();
+            clientID = _queue.First();
+            UpdateUILogs($"Processing {clientID}");
+            UpdateUILogs($"State of queue: {_queue.Count} and autoResetEvent: {autoResetEvent}");
             try 
             {
-                clientID = clientId;
                 string serializedDifferences = Utils.SerializeObject("Send metadata");
                 List<FileContent> fileContentsToSend = new List<FileContent>
                 {
@@ -439,7 +445,7 @@ public class Server
                 try
                 {
                     UpdateUILogs($"Sending {fileContentsToSend.Count} files to client and waiting to receive files from client {clientID}");
-                    _communicator.Send(serializedDataPacket, "FileTransferHandler", clientId);
+                    _communicator.Send(serializedDataPacket, "FileTransferHandler", clientID);
                 }
                 catch (Exception ex)
                 {
