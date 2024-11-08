@@ -21,12 +21,12 @@ namespace UI.Views
     /// </summary> 
     public partial class UpdaterPage : Page
     {
+        private readonly Server _server;
         public LogServiceViewModel LogServiceViewModel { get; }
         private readonly FileChangeNotifier _toolsNotificationService;
         private readonly ToolListViewModel _toolListViewModel;
-        private readonly ServerViewModel _serverViewModel; 
-        private readonly ClientViewModel _clientViewModel;
-
+        private readonly ServerViewModel _serverViewModel;
+        private readonly ClientViewModel _clientViewModel; 
         public UpdaterPage()
         {
             InitializeComponent();
@@ -115,6 +115,22 @@ namespace UI.Views
         }
         private void SyncUpButton_Click(object sender, RoutedEventArgs e)
         {
+            if (_serverViewModel.IsServerRunning)
+            {
+                List<string> newFiles = _serverViewModel.GetNewFiles();
+                if (newFiles.Any())
+                {
+                    _server.BroadcastNewFiles(newFiles);
+                    LogServiceViewModel.UpdateLogDetails("Sync initiated: Broadcasting new files to clients.\n");
+                }
+            }
+            else
+            {
+                // Log a message if the server is not running
+                LogServiceViewModel.UpdateLogDetails("Server is not running. Please start the server before syncing.\n");
+            }
+
         }
+
     }
 }

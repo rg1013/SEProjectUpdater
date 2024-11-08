@@ -23,8 +23,8 @@ public class Server
     private readonly static string _serverDirectory = AppConstants.ToolsFolderPath;
 
     private ICommunicator? _communicator;
+    public DateTime _lastSyncTime { get; set; } = DateTime.MinValue;
 
-    
     public void Start(string ip, string port)
     {
         try
@@ -111,6 +111,8 @@ public class Server
                 // Notify clients about the broadcast
                 UpdateUILogs("Broadcasting new files to all clients");
                 Trace.WriteLine("[Updater] Broadcasting new files to all clients");
+                //saving lastsynctime
+                _lastSyncTime = DateTime.Now;
 
                 // Send the serialized packet to all clients
                 try
