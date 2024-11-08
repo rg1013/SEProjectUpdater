@@ -24,7 +24,7 @@ public class DirectoryMetadataGenerator
     /// Create metadata of directory
     /// </summary>
     /// <param name="directoryPath">Path of the directory</param>
-    public DirectoryMetadataGenerator(string directoryPath = @"C:\Temp")
+    public DirectoryMetadataGenerator(string directoryPath = AppConstants.ToolsDirectory)
     {
         if (!Directory.Exists(directoryPath))
         {
@@ -49,7 +49,7 @@ public class DirectoryMetadataGenerator
     /// <param name="directoryPath">Path of directory.</param>
     /// <param name="writeToFile">bool value to write metadata to file.</param>
     /// <returns>List of FileMetadata objects in the directory.</returns>
-    private static List<FileMetadata> CreateFileMetadata(string directoryPath = @"C:\Temp")
+    private static List<FileMetadata> CreateFileMetadata(string directoryPath = AppConstants.ToolsDirectory)
     {
         List<FileMetadata> metadata = new List<FileMetadata>();
 

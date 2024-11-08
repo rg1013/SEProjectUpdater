@@ -14,6 +14,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.IO;
+using Updater;
 
 namespace ViewModels;
 
@@ -68,7 +69,7 @@ public class FileChangeNotifier : INotifyPropertyChanged
     private void StartMonitoring()
     {
         //Path to folder to monitor
-        string folderPath = @"C:\temp";
+        string folderPath = AppConstants.ToolsDirectory;
 
         //Check if folder exists, if not, create it.
         if (!Directory.Exists(folderPath))

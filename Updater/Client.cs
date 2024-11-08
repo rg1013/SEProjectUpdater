@@ -19,6 +19,7 @@ namespace Updater;
 public class Client
 {
     private readonly ICommunicator _communicator;
+    private static readonly string _clientDirectory = AppConstants.ToolsDirectory;
 
     public Client(ICommunicator communicator)
     {
@@ -131,7 +132,7 @@ public class Client
                     {
                         // Deserialize the content based on expected format
                         string content = Utils.DeserializeObject<string>(fileContent.SerializedContent);
-                        string filePath = Path.Combine(@"C:\recieved", fileContent.FileName);
+                        string filePath = Path.Combine(_clientDirectory, fileContent.FileName);
                         bool status = Utils.WriteToFileFromBinary(filePath, content);
                         if (!status)
                         {
@@ -202,7 +203,7 @@ public class Client
                             content = Utils.DeserializeObject<string>(decodedContent);
                         }
 
-                        string filePath = Path.Combine(@"C:\temp", fileContent.FileName ?? "Unnamed_file");
+                        string filePath = Path.Combine(_clientDirectory, fileContent.FileName ?? "Unnamed_file");
                         bool status = Utils.WriteToFileFromBinary(filePath, content);
                         if (!status)
                         {
@@ -231,7 +232,7 @@ public class Client
                     }
                     if (filename != null)
                     {
-                        string filePath = Path.Combine(@"C:\temp", filename);
+                        string filePath = Path.Combine(_clientDirectory, filename);
                         string? content = Utils.ReadBinaryFile(filePath);
 
                         if (content == null)

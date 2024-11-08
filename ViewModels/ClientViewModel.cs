@@ -70,7 +70,7 @@ namespace ViewModels
         public async Task ConnectAsync()
         {
             StatusMessage = "Connecting...";
-            string result = await _client.StartAsync("10.128.4.16", "60091");
+            string result = await _client.StartAsync(AppConstants.ServerIP, AppConstants.Port);
             if (result == "success")
             {
                 IsConnected = true;

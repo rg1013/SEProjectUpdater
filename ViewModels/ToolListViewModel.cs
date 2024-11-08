@@ -35,7 +35,7 @@ public class ToolListViewModel : INotifyPropertyChanged
     public void LoadAvailableTools()
     {
         ToolAssemblyLoader dllLoader = new ToolAssemblyLoader();
-        Dictionary<string, List<string>> hashMap = dllLoader.LoadToolsFromFolder(@"C:\temp");
+        Dictionary<string, List<string>> hashMap = dllLoader.LoadToolsFromFolder(AppConstants.ToolsDirectory);
 
         if (hashMap.Count > 0)
         {

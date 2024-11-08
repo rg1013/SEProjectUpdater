@@ -21,6 +21,7 @@ public class Server
 {
     static SemaphoreSlim semaphore = new SemaphoreSlim(1, 1); // Allow one client at a time
     static int clientCounter = 0; // Counter for unique client IDs
+    private static string _serverDirectory = AppConstants.ToolsDirectory;
 
     private ICommunicator? _communicator;
 
@@ -132,7 +133,7 @@ public class Server
                 Trace.WriteLine("[Updater]: Metadata from client received");
 
                 // Generate metadata of server
-                List<FileMetadata>? metadataServer = new DirectoryMetadataGenerator(@"C:\temp").GetMetadata();
+                List<FileMetadata>? metadataServer = new DirectoryMetadataGenerator(_serverDirectory).GetMetadata();
                 if (metadataServer == null)
                 {
                     throw new Exception("Metadata server is null");
@@ -145,7 +146,7 @@ public class Server
 
                 // Serialize and save differences to C:\temp\ folder
                 string serializedDifferences = Utils.SerializeObject(differences);
-                string tempFilePath = @"C:\temp\differences.xml";
+                string tempFilePath = @$"{_serverDirectory}\differences.xml";
 
                 if (string.IsNullOrEmpty(serializedDifferences))
                 {
@@ -175,7 +176,7 @@ public class Server
                 // Retrieve and add unique server files to fileContentsToSend
                 foreach (string filename in comparerInstance.UniqueServerFiles)
                 {
-                    string filePath = Path.Combine(@"C:\temp", filename);
+                    string filePath = Path.Combine(_serverDirectory, filename);
                     string? content = Utils.ReadBinaryFile(filePath);
 
                     if (content == null)
@@ -235,7 +236,7 @@ public class Server
                     if (fileContent != null && fileContent.SerializedContent != null && fileContent.FileName != null)
                     {
                         string content = Utils.DeserializeObject<string>(fileContent.SerializedContent);
-                        string filePath = Path.Combine(@"C:\temp", fileContent.FileName);
+                        string filePath = Path.Combine(_serverDirectory, fileContent.FileName);
                         bool status = Utils.WriteToFileFromBinary(filePath, content);
 
                         if (!status)
