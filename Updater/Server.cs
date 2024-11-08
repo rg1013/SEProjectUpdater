@@ -19,6 +19,7 @@ namespace Updater;
 
 public class Server
 {
+    static readonly AutoResetEvent autoResetEvent = new(true);
     static readonly SemaphoreSlim semaphore = new(1, 1); // Allow one client at a time
     private readonly static string _serverDirectory = AppConstants.ToolsFolderPath;
 
@@ -56,77 +57,67 @@ public class Server
             UpdateUILogs($"Error stopping the server: {ex.Message}");
         }
     }
-    public void BroadcastNewFiles(List<string> ListOfNewFiles)
+    public void BroadcastNewFiles(List<string> newFilesList)
     {
         try
         {
-            // Prepare a list to hold FileContent objects for each new file
-            List<FileContent> fileContentsToSend = new List<FileContent>();
+            // Prepare file contents for broadcasting
+            List<FileContent> fileContentsToBroadcast = new List<FileContent>();
+            UpdateUILogs($"Broadcasting {newFilesList.Count} files");
 
-            foreach (string filename in ListOfNewFiles)
+            foreach (string filename in newFilesList)
             {
                 string filePath = Path.Combine(_serverDirectory, filename);
 
                 if (!File.Exists(filePath))
                 {
-                    // Notify clients that the file is skipped because it doesn't exist
                     UpdateUILogs($"Skipped {filename} as it doesn't exist");
                     Trace.WriteLine($"[Updater] Warning: {filename} does not exist, skipping.");
-                    continue; // Skip to the next file
+                    continue;
                 }
 
                 string? content = Utils.ReadBinaryFile(filePath);
-
                 if (content == null)
                 {
-                    UpdateUILogs($"Skipped {filename} as content of file is null");
+                    UpdateUILogs($"Skipped {filename} as content is null");
                     Trace.WriteLine($"[Updater] Warning: Content of file {filename} is null, skipping.");
-                    continue; // Skip to the next file instead of throwing an exception
+                    continue;
                 }
 
                 Trace.WriteLine($"[Updater] Content length of {filename}: {content.Length}");
 
-                // Serialize file content and create FileContent object
-                string serializedFileContent = Utils.SerializeObject(content);
-                if (string.IsNullOrEmpty(serializedFileContent))
+                string serializedContent = Utils.SerializeObject(content);
+                if (string.IsNullOrEmpty(serializedContent))
                 {
-                    Trace.WriteLine($"[Updater] Warning: Serialized content for {filename} is null or empty.");
-                    continue; // Skip to next file if serialization fails
+                    Trace.WriteLine($"[Updater] Warning: Serialization of {filename} failed or is empty.");
+                    continue;
                 }
 
-                // Create a FileContent object and add it to the list
-                FileContent fileContent = new FileContent(filename, serializedFileContent);
-                fileContentsToSend.Add(fileContent);
+                fileContentsToBroadcast.Add(new FileContent(filename, serializedContent));
             }
 
-            // Check if there are files to broadcast
-            if (fileContentsToSend.Any())
+            if (fileContentsToBroadcast.Any())
             {
-                // Create DataPacket for broadcasting
-                DataPacket dataPacketToSend = new DataPacket(DataPacket.PacketType.Broadcast, fileContentsToSend);
+                // Create and serialize DataPacket for broadcasting
+                DataPacket broadcastPacket = new DataPacket(DataPacket.PacketType.Broadcast, fileContentsToBroadcast);
+                string serializedPacket = Utils.SerializeObject(broadcastPacket);
 
-                // Serialize DataPacket
-                string serializedDataPacket = Utils.SerializeObject(dataPacketToSend);
-
-                // Notify clients about the broadcast
                 UpdateUILogs("Broadcasting new files to all clients");
                 Trace.WriteLine("[Updater] Broadcasting new files to all clients");
-                //saving lastsynctime
-                _lastSyncTime = DateTime.Now;
+                _lastSyncTime = DateTime.Now; // Save last sync time
 
-                // Send the serialized packet to all clients
                 try
                 {
-                    _communicator?.Send(serializedDataPacket, "FileTransferHandler", null); // Broadcast to all clients
+                    _communicator?.Send(serializedPacket, "FileTransferHandler", null);
                 }
                 catch (Exception ex)
                 {
-                    Trace.WriteLine($"[Updater] Error sending broadcast to clients: {ex.Message}");
+                    Trace.WriteLine($"[Updater] Error broadcasting to clients: {ex.Message}");
                 }
             }
             else
             {
-                Trace.WriteLine("[Updater] No new files to broadcast.");
+                Trace.WriteLine("[Updater] No files to broadcast.");
             }
         }
         catch (Exception ex)
@@ -364,11 +355,15 @@ public class Server
             {
                 Trace.WriteLine($"[Updater] Error in ClientFilesHandler: {ex.Message}");
             }
+            finally
+            {
+                autoResetEvent.Set();
+            }
         }
 
         public void OnDataReceived(string serializedData)
         {
-            semaphore.Wait(); // Wait until it's safe to enter
+            //semaphore.Wait(); // Wait until it's safe to enter
             try
             {
                 Trace.WriteLine("[Updater] FileTransferHandler received data");
@@ -388,10 +383,10 @@ public class Server
             {
                 Trace.WriteLine($"[Updater] Deserialization failed: {ex.Message}");
             }
-            finally
-            {
-                semaphore.Release(); // Release the semaphore
-            }
+            //finally
+            //{
+              //  semaphore.Release(); // Release the semaphore
+            //}
         }
 
         public void OnClientJoined(TcpClient socket)
@@ -403,12 +398,59 @@ public class Server
                 clientID = clientId;
                 Trace.WriteLine($"[Updater] FileTransferHandler detected new client connection: {socket.Client.RemoteEndPoint}, assigned ID: {clientId}");
                 UpdateUILogs($"Detected new client connection: {socket.Client.RemoteEndPoint}, assigned ID: {clientId}");
+
                 clientConnections.Add(clientId, socket); // Add client connection to the dictionary
                 _communicator.AddClient(clientId, socket); // Use the unique client ID
+
+                // Start client processing
+                StartClientProcessing(clientId, socket);
             }
             catch (Exception ex)
             {
                 Trace.WriteLine($"[Updater] Error in OnClientJoined: {ex.Message}");
+            }
+        }
+
+        private void StartClientProcessing(string clientId, TcpClient socket)
+        {
+            // Start a thread to send the signal to the client
+            Task.Run(() => SendSignalToClient(clientId));
+        }
+
+
+        public void SendSignalToClient(string clientId)
+        {
+            autoResetEvent.WaitOne();
+            try 
+            {
+                clientID = clientId;
+                string serializedDifferences = Utils.SerializeObject("Send metadata");
+                List<FileContent> fileContentsToSend = new List<FileContent>
+                {
+                    // Added difference file to be sent to client
+                    new FileContent("Send.xml", serializedDifferences)
+                };
+                DataPacket dataPacketToSend = new(DataPacket.PacketType.Free, fileContentsToSend);
+                Trace.WriteLine($"[Updater] Total files to send: {fileContentsToSend.Count}");
+
+                // Serialize DataPacket
+                string serializedDataPacket = Utils.SerializeObject(dataPacketToSend);
+
+                try
+                {
+                    UpdateUILogs($"Sending {fileContentsToSend.Count} files to client and waiting to receive files from client {clientID}");
+                    _communicator.Send(serializedDataPacket, "FileTransferHandler", clientId);
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine($"[Updater] Error sending data to client: {ex.Message}");
+                    UpdateUILogs($"Error sending data to client: {ex.Message}");
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"[Updater] Error sending data to client: {ex.Message}");
             }
         }
 

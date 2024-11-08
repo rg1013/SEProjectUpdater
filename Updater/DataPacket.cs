@@ -23,7 +23,8 @@ public class DataPacket
         Metadata,      // single file
         Differences,   // multiple files
         ClientFiles,   // multiple files
-        Broadcast      // multiple files
+        Broadcast,      // multiple files
+        Free
     }
 
     public DataPacket() { }

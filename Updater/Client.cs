@@ -40,7 +40,7 @@ public class Client(ICommunicator communicator)
     public void Subscribe()
     {
         _communicator.Subscribe("FileTransferHandler", new FileTransferHandler(_communicator));
-        SyncUp();
+         // SyncUp();
     }
 
     public void SyncUp()
@@ -78,6 +78,9 @@ public class Client(ICommunicator communicator)
                     case DataPacket.PacketType.Broadcast:
                         BroadcastHandler(dataPacket, communicator);
                         break;
+                    case DataPacket.PacketType.Free:
+                        SendMetadatToServer(dataPacket, communicator);
+                        break;
                     case DataPacket.PacketType.Differences:
                         DifferencesHandler(dataPacket, communicator);
                         break;
@@ -92,6 +95,28 @@ public class Client(ICommunicator communicator)
             }
         }
 
+        private static void SendMetadatToServer(DataPacket dataPacket, ICommunicator communicator)
+        {
+            List<FileContent> fileContentList = dataPacket.FileContentList;
+            UpdateUILogs($"Recieved {fileContentList.Count} files from Server");
+
+            // Deserialize the 'differences' file content
+            FileContent signalFile = fileContentList[0];
+            string? serializedDifferences = signalFile.SerializedContent;
+            string? signalFileName = signalFile.FileName;
+            UpdateUILogs($"Extracted difference file {signalFileName}");
+
+            if (signalFileName == "Send.xml")
+            {
+                UpdateUILogs("Syncing Up with the server!");
+                string serializedMetaData = Utils.SerializedMetadataPacket();
+
+                // Sending data as FileTransferHandler
+                Trace.WriteLine("[Updater] Sending metadata of client as FileTransferHandler...");
+
+                communicator.Send(serializedMetaData, "FileTransferHandler", null);
+            }
+        }
         private static void BroadcastHandler(DataPacket dataPacket, ICommunicator communicator)
         {
             try
