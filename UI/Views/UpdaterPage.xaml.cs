@@ -52,8 +52,8 @@ namespace UI.Views
             // Check if the server can be started 
             if (_serverViewModel.CanStartServer())
             {
-                string ip = "10.32.2.232"; 
-                // string ip = "10.128.4.178"; 
+                //string ip = "10.32.2.232"; 
+                string ip = "10.128.4.178"; 
                 string port = "60091";
 
                 _serverViewModel.StartServer(ip, port);

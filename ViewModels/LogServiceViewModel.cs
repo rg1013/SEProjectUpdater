@@ -78,7 +78,8 @@ public class LogServiceViewModel : INotifyPropertyChanged
     ///<param name="message">The message to append to the log.</param>
     public void UpdateLogDetails(string message)
     {
-        LogDetails += "\n" + message;
+        string timestamp = DateTime.Now.ToString("HH:mm:ss dd-MM-yyyy");
+        LogDetails += $"{timestamp}: {message}\n";
     }
 
     ///<summary>

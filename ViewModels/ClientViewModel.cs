@@ -55,8 +55,8 @@ public class ClientViewModel : INotifyPropertyChanged
 
     public async Task ConnectAsync()
     {
-        string result = await _client.StartAsync("10.32.2.232", "60091");
-        // string result = await _client.StartAsync("10.128.4.178", "60091");
+        //string result = await _client.StartAsync("10.32.2.232", "60091");
+        string result = await _client.StartAsync("10.128.4.178", "60091");
         if (result == "success")
         {
             IsConnected = true;
