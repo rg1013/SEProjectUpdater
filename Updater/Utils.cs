@@ -85,7 +85,8 @@ public class Utils
             ISerializer serializer = new Serializer();
             return serializer.Serialize(obj);
         }
-        catch (Exception ex) { 
+        catch (Exception ex)
+        {
             Console.WriteLine(ex.ToString());
             return "";
         }
@@ -127,6 +128,16 @@ public class Utils
         List<FileContent> fileContents = new List<FileContent> { fileContent };
 
         DataPacket dataPacket = new DataPacket(DataPacket.PacketType.Metadata, fileContents);
+        return SerializeObject(dataPacket);
+    }
+
+    /// <summary>
+    /// Generates serialized SyncUp packet
+    /// </summary>
+    /// <returns>Serialized SyncUp packet</returns>
+    public static string SerializedSyncUpPacket()
+    {
+        DataPacket dataPacket = new DataPacket(DataPacket.PacketType.SyncUp, new List<FileContent>());
         return SerializeObject(dataPacket);
     }
 }
