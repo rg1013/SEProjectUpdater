@@ -191,6 +191,13 @@ public class ServerNotificationHandler : INotificationHandler
         }
     }
 
+    /// <summary>
+    /// Handler for SyncUp request from client
+    /// </summary>
+    /// <param name="dataPacket">Data packet</param>
+    /// <param name="communicator">Communicator object</param>
+    /// <param name="server">Server object</param>
+    /// <param name="clientId">Client ID</param>
     private static void SyncUpHandler(DataPacket dataPacket, ICommunicator communicator, Server server, string clientId)
     {
         try
@@ -205,6 +212,12 @@ public class ServerNotificationHandler : INotificationHandler
         }
     }
 
+    /// <summary>
+    /// Metadata dataPacket Handler
+    /// </summary>
+    /// <param name="dataPacket">Data packet</param>
+    /// <param name="communicator">Communicator object</param>
+    /// <param name="clientID">Client ID</param>
     private static void MetadataHandler(DataPacket dataPacket, ICommunicator communicator, string clientID)
     {
         try
@@ -330,6 +343,13 @@ public class ServerNotificationHandler : INotificationHandler
         }
     }
 
+    /// <summary>
+    /// ClientFiles dataPacket handler
+    /// </summary>
+    /// <param name="dataPacket">Data packet</param>
+    /// <param name="communicator">Communicator object</param>
+    /// <param name="server">Server object</param>
+    /// <param name="clientID">Client ID</param>
     private static void ClientFilesHandler(DataPacket dataPacket, ICommunicator communicator, Server server, string clientID)
     {
         try
