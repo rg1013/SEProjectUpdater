@@ -135,6 +135,9 @@ public class ServerNotificationHandler : INotificationHandler
             // Check PacketType
             switch (dataPacket.DataPacketType)
             {
+                case DataPacket.PacketType.SyncUp:
+                    SyncUpHandler(dataPacket, communicator);
+                    break;
                 case DataPacket.PacketType.Metadata:
                     MetadataHandler(dataPacket, communicator, clientID);
                     break;
@@ -148,6 +151,17 @@ public class ServerNotificationHandler : INotificationHandler
         catch (Exception ex)
         {
             Console.WriteLine($"Error in PacketDemultiplexer: {ex.Message}");
+        }
+    }
+
+    private static void SyncUpHandler(DataPacket dataPacket, ICommunicator communicator)
+    {
+        try
+        {
+        }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"[Updater] Error in SyncUpHandler: {ex.Message}");
         }
     }
 

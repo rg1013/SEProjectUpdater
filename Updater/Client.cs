@@ -48,15 +48,24 @@ public class Client
     }
 
 
-    // public void SyncUp()
-    // {
-    //     string serializedMetaData = Utils.SerializedMetadataPacket();
+    /// <summary>
+    /// Sends a SyncUp request to the server
+    /// </summary>
+    public void SyncUp()
+    {
+        try
+        {
+            string serializedSyncUpPacket = Utils.SerializedSyncUpPacket();
 
-    //     // Sending data as ClientMetadataHandler
-    //     ReceiveData("Syncing Up with the server");
-    //     Trace.WriteLine("[Updater] Sending data as ClientMetadataHandler...");
-    //     _communicator.Send(serializedMetaData, "ClientMetadataHandler", null);
-    // }
+            // ReceiveData("Sending syncup request to the server");
+            Trace.WriteLine("[Updater] Sending data as ClientMetadataHandler...");
+            _communicator.Send(serializedSyncUpPacket, "ClientMetadataHandler", null);
+        }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"[Updater] Error in SyncUp: {ex.Message}");
+        }
+    }
 
     public void Stop()
     {
