@@ -37,8 +37,8 @@ public class Server
             UpdateUILogs($"Server started on {result}");
             UpdateUILogs($"Monitoring {_serverDirectory}");
 
-            // Subscribing the "FileTransferHandler" for handling notifications
-            _communicator.Subscribe("FileTransferHandler", new FileTransferHandler(_communicator));
+            // Subscribing the "ServerNotificationHandler" for handling notifications
+            _communicator.Subscribe("ServerNotificationHandler", new ServerNotificationHandler(_communicator));
         }
         catch (Exception ex)
         {
@@ -65,7 +65,7 @@ public class Server
     }
 }
 
-public class FileTransferHandler : INotificationHandler
+public class ServerNotificationHandler : INotificationHandler
 {
     public string clientID = "";
     private readonly ICommunicator _communicator;
@@ -73,7 +73,7 @@ public class FileTransferHandler : INotificationHandler
     private static int clientCounter = 0;
     static SemaphoreSlim semaphore = new SemaphoreSlim(1, 1); // Allow one client at a time
 
-    public FileTransferHandler(ICommunicator communicator)
+    public ServerNotificationHandler(ICommunicator communicator)
     {
         _communicator = communicator;
     }
@@ -216,7 +216,7 @@ public class FileTransferHandler : INotificationHandler
             try
             {
                 Server.UpdateUILogs($"Sending files to client and waiting to recieve files from client {clientID}");
-                communicator.Send(serializedDataPacket, "FileTransferHandler", clientID);
+                communicator.Send(serializedDataPacket, "ServerNotificationHandler", clientID);
             }
             catch (Exception ex)
             {
@@ -266,7 +266,7 @@ public class FileTransferHandler : INotificationHandler
             Trace.WriteLine("[Updater] Broadcasting the new files");
             try
             {
-                communicator.Send(serializedPacket, "FileTransferHandler", null); // Broadcast to all clients
+                communicator.Send(serializedPacket, "ServerNotificationHandler", null); // Broadcast to all clients
             }
             catch (Exception ex)
             {
@@ -284,7 +284,7 @@ public class FileTransferHandler : INotificationHandler
         semaphore.Wait(); // Wait until it's safe to enter
         try
         {
-            Trace.WriteLine("[Updater] FileTransferHandler received data");
+            Trace.WriteLine("[Updater] ServerNotificationHandler received data");
             DataPacket deserializedData = Utils.DeserializeObject<DataPacket>(serializedData);
             if (deserializedData == null)
             {
@@ -314,7 +314,7 @@ public class FileTransferHandler : INotificationHandler
             // Generate a unique client ID
             string clientId = $"Client{Interlocked.Increment(ref clientCounter)}"; // Use Interlocked for thread safety
             clientID = clientId;
-            Trace.WriteLine($"[Updater] FileTransferHandler detected new client connection: {socket.Client.RemoteEndPoint}, assigned ID: {clientId}");
+            Trace.WriteLine($"[Updater] ServerNotificationHandler detected new client connection: {socket.Client.RemoteEndPoint}, assigned ID: {clientId}");
             Server.UpdateUILogs($"Detected new client connection: {socket.Client.RemoteEndPoint}, assigned ID: {clientId}");
             clientConnections.Add(clientId, socket); // Add client connection to the dictionary
             _communicator.AddClient(clientId, socket); // Use the unique client ID
@@ -332,7 +332,7 @@ public class FileTransferHandler : INotificationHandler
             if (clientConnections.Remove(clientId))
             {
                 Server.UpdateUILogs("Detected client {clientId} disconnected");
-                Trace.WriteLine($"[Updater] FileTransferHandler detected client {clientId} disconnected");
+                Trace.WriteLine($"[Updater] ServerNotificationHandler detected client {clientId} disconnected");
             }
             else
             {
