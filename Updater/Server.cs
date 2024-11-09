@@ -136,6 +136,9 @@ public class Server
     }
 }
 
+/// <summary>
+/// INotificationHandler Implementation in Server side
+/// </summary>
 public class ServerNotificationHandler : INotificationHandler
 {
     public string clientID = "";
