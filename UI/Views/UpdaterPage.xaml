@@ -94,7 +94,8 @@
                 </ListView>
             </ScrollViewer>
 
-
+            <Button Content="CloudSync" Click ="SyncCloudButton_Click" x:Name="CloudSyncButton" Width = "150" Height = "35"/>
+            
             <Button Content="Upload Analyzers" Width="150" Height="35"/>
             <Button Content="Check for Updates" Width="150" Height="35"/>
 

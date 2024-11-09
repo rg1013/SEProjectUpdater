@@ -10,6 +10,7 @@
  * Description = Initialize a page for Updater 
  *****************************************************************************/
 
+using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Controls;
 using Updater;
@@ -22,9 +23,10 @@ namespace UI.Views
     /// </summary> 
     public partial class UpdaterPage : Page
     {
-        public LogServiceViewModel LogServiceViewModel { get; }
+        public LogServiceViewModel _logServiceViewModel { get; }
         private FileChangeNotifier _analyzerNotificationService;
         private ToolListViewModel _toolListViewModel;
+        private CloudViewModel _cloudViewModel;
         private ServerViewModel _serverViewModel; // Added server view model 
         private ClientViewModel _clientViewModel; // Added client view model 
 
@@ -39,25 +41,25 @@ namespace UI.Views
             _analyzerNotificationService = new FileChangeNotifier();
             _analyzerNotificationService.MessageReceived += OnMessageReceived;
 
-            LogServiceViewModel = new LogServiceViewModel();
-            DataContext = LogServiceViewModel;
+            _logServiceViewModel = new LogServiceViewModel();
+            DataContext = _logServiceViewModel;
 
-            _serverViewModel = new ServerViewModel(LogServiceViewModel); // Initialize the server view model 
-            _clientViewModel = new ClientViewModel(LogServiceViewModel); // Initialize the client view model 
+            _serverViewModel = new ServerViewModel(_logServiceViewModel); // Initialize the server view model 
+            _clientViewModel = new ClientViewModel(_logServiceViewModel); // Initialize the client view model 
         }
 
         private void OnMessageReceived(string message)
         {
             _toolListViewModel.LoadAvailableTools(); // Refresh the tool list on message receipt 
-            LogServiceViewModel.ShowNotification(message); // Show received message as a notification 
-            LogServiceViewModel.UpdateLogDetails(message); // Update log with received message 
+            _logServiceViewModel.ShowNotification(message); // Show received message as a notification 
+            _logServiceViewModel.UpdateLogDetails(message); // Update log with received message 
         }
 
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
             _toolListViewModel.LoadAvailableTools(); // Load tools when the page loads 
-            LogServiceViewModel.UpdateLogDetails("Page loaded successfully.\n");
-            LogServiceViewModel.ShowNotification("Welcome to the application!"); // Welcome notification 
+            _logServiceViewModel.UpdateLogDetails("Page loaded successfully.\n");
+            _logServiceViewModel.ShowNotification("Welcome to the application!"); // Welcome notification 
         }
 
         private void StartServerButton_Click(object sender, RoutedEventArgs e)
@@ -80,7 +82,7 @@ namespace UI.Views
             }
             else
             {
-                LogServiceViewModel.UpdateLogDetails("Server is already running on another instance.\n");
+                _logServiceViewModel.UpdateLogDetails("Server is already running on another instance.\n");
             }
         }
 
@@ -101,7 +103,7 @@ namespace UI.Views
         {
             if (_clientViewModel.CanConnect)
             {
-                LogServiceViewModel.UpdateLogDetails("Connecting to server...\n"); // Log connecting message
+                _logServiceViewModel.UpdateLogDetails("Connecting to server...\n"); // Log connecting message
                 await _clientViewModel.ConnectAsync();
 
                 // Disable all other buttons except for Disconnect
@@ -112,12 +114,12 @@ namespace UI.Views
                 // Enable Disconnect button
                 if (_clientViewModel.IsConnected)
                 {
-                    LogServiceViewModel.UpdateLogDetails("Successfully connected to server!\n"); // Log successful connection
+                    _logServiceViewModel.UpdateLogDetails("Successfully connected to server!\n"); // Log successful connection
                     DisconnectButton.IsEnabled = true; // Enable Disconnect button
                 }
                 else
                 {
-                    LogServiceViewModel.UpdateLogDetails("Failed to connect to server.\n"); // Log failure
+                    _logServiceViewModel.UpdateLogDetails("Failed to connect to server.\n"); // Log failure
                     StartServerButton.IsEnabled = true; // Disable Start button
                     StopServerButton.IsEnabled = false; // Disable Stop button
                     ConnectButton.IsEnabled = true;
@@ -130,7 +132,7 @@ namespace UI.Views
             if (_clientViewModel.CanDisconnect)
             {
                 _clientViewModel.Disconnect();
-                LogServiceViewModel.UpdateLogDetails("Disconnected from server.\n"); // Log disconnection message
+                _logServiceViewModel.UpdateLogDetails("Disconnected from server.\n"); // Log disconnection message
 
                 // Enable buttons after disconnection
                 StartServerButton.IsEnabled = true; // Enable Start button
@@ -139,5 +141,54 @@ namespace UI.Views
                 DisconnectButton.IsEnabled = false; // Disable Disconnect button
             }
         }
+
+        private async void SyncCloudButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Disable the Sync button to prevent multiple syncs at the same time
+            CloudSyncButton.IsEnabled = false;
+
+            string ip = AppConstants.ServerIP;
+            string port = AppConstants.Port;
+
+            if (_serverViewModel.CanStartServer())
+            {
+                _logServiceViewModel.UpdateLogDetails("Cloud sync starting...");
+
+                try
+                {
+                    // Start the server
+                    _serverViewModel.StartServer(ip, port);
+                    _logServiceViewModel.UpdateLogDetails("Server started for cloud sync.");
+
+                    // Perform cloud sync asynchronously
+                    await Task.Run(() => _cloudViewModel.PerformCloudSync());
+
+                    _logServiceViewModel.UpdateLogDetails("Cloud sync completed.");
+                }
+                catch (Exception ex)
+                {
+                    _logServiceViewModel.UpdateLogDetails($"Error during cloud sync: {ex.Message}");
+                }
+                finally
+                {
+                    // Ensure the server is stopped and button is re-enabled
+                    _serverViewModel.StopServer();
+                    _logServiceViewModel.UpdateLogDetails("Server stopped after cloud sync.");
+
+                    CloudSyncButton.IsEnabled = true; // Re-enable Sync button
+                }
+            }
+            else
+            {
+                _logServiceViewModel.UpdateLogDetails("Cannot start cloud sync as the server is already running.");
+                CloudSyncButton.IsEnabled = true; // Re-enable Sync button if sync cannot start
+            }
+        }
+
+
+
+
+
+
     }
 }
