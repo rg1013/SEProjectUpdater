@@ -44,18 +44,19 @@ public class Client
     public void Subscribe()
     {
         _communicator.Subscribe("ClientMetadataHandler", new ClientMetadataHandler(_communicator));
-        SyncUp();
+        // SyncUp();
     }
 
-    public void SyncUp()
-    {
-        string serializedMetaData = Utils.SerializedMetadataPacket();
 
-        // Sending data as ClientMetadataHandler
-        ReceiveData("Syncing Up with the server");
-        Trace.WriteLine("[Updater] Sending data as ClientMetadataHandler...");
-        _communicator.Send(serializedMetaData, "ClientMetadataHandler", null);
-    }
+    // public void SyncUp()
+    // {
+    //     string serializedMetaData = Utils.SerializedMetadataPacket();
+
+    //     // Sending data as ClientMetadataHandler
+    //     ReceiveData("Syncing Up with the server");
+    //     Trace.WriteLine("[Updater] Sending data as ClientMetadataHandler...");
+    //     _communicator.Send(serializedMetaData, "ClientMetadataHandler", null);
+    // }
 
     public void Stop()
     {
@@ -271,7 +272,7 @@ public class Client
         {
             try
             {
-                
+
                 Trace.WriteLine($"[Updater] ClientMetadataHandler received data");
                 ReceiveData($"ClientMetadataHandler received data");
                 PacketDemultiplexer(serializedData, _communicator);
@@ -286,6 +287,6 @@ public class Client
 
     public static void ReceiveData(string data)
     {
-        OnLogUpdate?.Invoke(data); 
+        OnLogUpdate?.Invoke(data);
     }
 }

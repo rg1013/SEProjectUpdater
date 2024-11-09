@@ -59,6 +59,24 @@ public class Server
         }
     }
 
+    public void SyncUp(string clientId)
+    {
+        string serializedSyncUpPacket = Utils.SerializedSyncUpPacket();
+
+        // Write equivalent of this: 
+        // ReceiveData("Syncing Up with the server");
+        Trace.WriteLine($"[Updater] Sending SyncUp request dataPacket to client: {clientId}");
+        if (_communicator != null)
+        {
+            _communicator.Send(serializedSyncUpPacket, "ServerNotificationHandler", clientId);
+        }
+        else
+        {
+            UpdateUILogs("Communicator is null");
+        }
+
+    }
+
     public static void UpdateUILogs(string message)
     {
         NotificationReceived?.Invoke(message);
