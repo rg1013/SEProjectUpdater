@@ -83,6 +83,9 @@ public class Client
                 // Check PacketType
                 switch (dataPacket.DataPacketType)
                 {
+                    case DataPacket.PacketType.SyncUp:
+                        SyncUpHandler(dataPacket, communicator);
+                        break;
                     case DataPacket.PacketType.Metadata:
                         MetadataHandler(dataPacket, communicator);
                         break;
@@ -103,6 +106,25 @@ public class Client
             catch (Exception ex)
             {
                 Trace.WriteLine($"[Updater] Error in PacketDemultiplexer: {ex.Message}");
+            }
+        }
+
+        private static void SyncUpHandler(DataPacket dataPacket, ICommunicator communicator)
+        {
+            try
+            {
+                ReceiveData("Received SyncUp request from server");
+                string serializedMetaData = Utils.SerializedMetadataPacket();
+
+                // Sending data to server
+                Trace.WriteLine("[Updater] Sending data as ClientMetadataHandler...");
+                communicator.Send(serializedMetaData, "ClientMetadataHandler", null);
+
+                ReceiveData("Metadata sent to server");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in SyncUpHandler: {ex.Message}");
             }
         }
 

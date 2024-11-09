@@ -22,6 +22,8 @@ public class Server
     static int clientCounter = 0; // Counter for unique client IDs
     public static string _serverDirectory = AppConstants.ToolsDirectory;
 
+    public BinarySemaphore semaphore = new BinarySemaphore();
+
     private ICommunicator? _communicator;
 
     public static event Action<string>? NotificationReceived; // Event to notify the view model
@@ -38,7 +40,7 @@ public class Server
             UpdateUILogs($"Monitoring {_serverDirectory}");
 
             // Subscribing the "ServerNotificationHandler" for handling notifications
-            _communicator.Subscribe("ServerNotificationHandler", new ServerNotificationHandler(_communicator));
+            _communicator.Subscribe("ServerNotificationHandler", new ServerNotificationHandler(_communicator, this));
         }
         catch (Exception ex)
         {
@@ -59,22 +61,48 @@ public class Server
         }
     }
 
-    public void SyncUp(string clientId)
+    private void SyncUp(string clientId)
     {
-        string serializedSyncUpPacket = Utils.SerializedSyncUpPacket();
-
-        // Write equivalent of this: 
-        // ReceiveData("Syncing Up with the server");
-        Trace.WriteLine($"[Updater] Sending SyncUp request dataPacket to client: {clientId}");
-        if (_communicator != null)
+        try
         {
-            _communicator.Send(serializedSyncUpPacket, "ServerNotificationHandler", clientId);
+            string serializedSyncUpPacket = Utils.SerializedSyncUpPacket();
+
+            // Write equivalent of this: 
+            // ReceiveData("Syncing Up with the server");
+            Trace.WriteLine($"[Updater] Sending SyncUp request dataPacket to client: {clientId}");
+            if (_communicator != null)
+            {
+                _communicator.Send(serializedSyncUpPacket, "ServerNotificationHandler", clientId);
+            }
+            else
+            {
+                UpdateUILogs("Communicator is null");
+            }
         }
-        else
+        catch (Exception ex)
         {
-            UpdateUILogs("Communicator is null");
+            UpdateUILogs($"Error in SyncUp: {ex.Message}");
         }
 
+    }
+
+    public void RequestSyncUp(string clientId)
+    {
+        try
+        {
+            semaphore.Wait();
+            SyncUp(clientId);
+        }
+        catch (Exception ex)
+        {
+            UpdateUILogs($"Error in RequestSyncUp: {ex.Message}");
+        }
+    }
+
+
+    public void CompleteSync()
+    {
+        semaphore.Signal();
     }
 
     public static void UpdateUILogs(string message)
@@ -87,16 +115,17 @@ public class ServerNotificationHandler : INotificationHandler
 {
     public string clientID = "";
     private readonly ICommunicator _communicator;
+    private readonly Server _server;
     private readonly Dictionary<string, TcpClient> clientConnections = new Dictionary<string, TcpClient>(); // Track clients
     private static int clientCounter = 0;
-    static SemaphoreSlim semaphore = new SemaphoreSlim(1, 1); // Allow one client at a time
 
-    public ServerNotificationHandler(ICommunicator communicator)
+    public ServerNotificationHandler(ICommunicator communicator, Server server)
     {
         _communicator = communicator;
+        _server = server;
     }
 
-    public static void PacketDemultiplexer(string serializedData, ICommunicator communicator, string clientID)
+    public static void PacketDemultiplexer(string serializedData, ICommunicator communicator, Server server, string clientID)
     {
         try
         {
@@ -110,7 +139,7 @@ public class ServerNotificationHandler : INotificationHandler
                     MetadataHandler(dataPacket, communicator, clientID);
                     break;
                 case DataPacket.PacketType.ClientFiles:
-                    ClientFilesHandler(dataPacket, communicator, clientID);
+                    ClientFilesHandler(dataPacket, communicator, server, clientID);
                     break;
                 default:
                     throw new Exception("Invalid PacketType");
@@ -247,7 +276,7 @@ public class ServerNotificationHandler : INotificationHandler
         }
     }
 
-    private static void ClientFilesHandler(DataPacket dataPacket, ICommunicator communicator, string clientID)
+    private static void ClientFilesHandler(DataPacket dataPacket, ICommunicator communicator, Server server, string clientID)
     {
         try
         {
@@ -290,6 +319,10 @@ public class ServerNotificationHandler : INotificationHandler
             {
                 Trace.WriteLine($"[Updater] Error sending data to client: {ex.Message}");
             }
+
+            // Wait for one second
+            System.Threading.Thread.Sleep(1000);
+            server.CompleteSync();
         }
         catch (Exception ex)
         {
@@ -299,7 +332,6 @@ public class ServerNotificationHandler : INotificationHandler
 
     public void OnDataReceived(string serializedData)
     {
-        semaphore.Wait(); // Wait until it's safe to enter
         try
         {
             Trace.WriteLine("[Updater] ServerNotificationHandler received data");
@@ -311,7 +343,7 @@ public class ServerNotificationHandler : INotificationHandler
             else
             {
                 Trace.WriteLine("[Updater] Read received data Successfully");
-                PacketDemultiplexer(serializedData, _communicator, clientID);
+                PacketDemultiplexer(serializedData, _communicator, _server, clientID);
             }
 
         }
@@ -321,7 +353,6 @@ public class ServerNotificationHandler : INotificationHandler
         }
         finally
         {
-            semaphore.Release(); // Release the semaphore
         }
     }
 
@@ -332,10 +363,16 @@ public class ServerNotificationHandler : INotificationHandler
             // Generate a unique client ID
             string clientId = $"Client{Interlocked.Increment(ref clientCounter)}"; // Use Interlocked for thread safety
             clientID = clientId;
+
             Trace.WriteLine($"[Updater] ServerNotificationHandler detected new client connection: {socket.Client.RemoteEndPoint}, assigned ID: {clientId}");
             Server.UpdateUILogs($"Detected new client connection: {socket.Client.RemoteEndPoint}, assigned ID: {clientId}");
+
             clientConnections.Add(clientId, socket); // Add client connection to the dictionary
             _communicator.AddClient(clientId, socket); // Use the unique client ID
+
+            // Start new thread for client for communication
+            Thread thread = new Thread(() => _server.RequestSyncUp(clientId));
+            thread.Start();
         }
         catch (Exception ex)
         {
