@@ -28,6 +28,11 @@ public class Server
 
     public static event Action<string>? NotificationReceived; // Event to notify the view model
 
+    /// <summary>
+    /// Start the server
+    /// </summary>
+    /// <param name="ip">IP address of server</param>
+    /// <param name="port">port number of server</param>
     public void Start(string ip, string port)
     {
         try
@@ -48,6 +53,9 @@ public class Server
         }
     }
 
+    /// <summary>
+    /// Stop the server
+    /// </summary>
     public void Stop()
     {
         try
@@ -61,6 +69,10 @@ public class Server
         }
     }
 
+    /// <summary>
+    /// Send SyncUp request to client
+    /// </summary>
+    /// <param name="clientId">ID of the client</param>
     private void SyncUp(string clientId)
     {
         try
@@ -86,6 +98,9 @@ public class Server
 
     }
 
+    /// <summary>
+    /// Implementation of Wait before SyncUp
+    /// </summary>
     public void RequestSyncUp(string clientId)
     {
         try
@@ -100,9 +115,19 @@ public class Server
     }
 
 
+    /// <summary>
+    /// Complete the sync by Signalling semaphore
+    /// </summary>
     public void CompleteSync()
     {
-        semaphore.Signal();
+        try
+        {
+            semaphore.Signal();
+        }
+        catch (Exception ex)
+        {
+            UpdateUILogs($"Error in CompleteSync: {ex.Message}");
+        }
     }
 
     public static void UpdateUILogs(string message)
@@ -119,12 +144,24 @@ public class ServerNotificationHandler : INotificationHandler
     private readonly Dictionary<string, TcpClient> clientConnections = new Dictionary<string, TcpClient>(); // Track clients
     private static int clientCounter = 0;
 
+    /// <summary>
+    /// Constructor for ServerNotificationHandler
+    /// </summary>
+    /// <param name="communicator">Communicator object</param>
+    /// <param name="server">Server object</param>
     public ServerNotificationHandler(ICommunicator communicator, Server server)
     {
         _communicator = communicator;
         _server = server;
     }
 
+    /// <summary>
+    /// Demultiplex the data packet
+    /// </summary>
+    /// <param name="serializedData">Serialized data packet</param>
+    /// <param name="communicator">Communicator object</param>
+    /// <param name="server">Server object</param>
+    /// <param name="clientID">Client ID</param>
     public static void PacketDemultiplexer(string serializedData, ICommunicator communicator, Server server, string clientID)
     {
         try
@@ -136,7 +173,7 @@ public class ServerNotificationHandler : INotificationHandler
             switch (dataPacket.DataPacketType)
             {
                 case DataPacket.PacketType.SyncUp:
-                    SyncUpHandler(dataPacket, communicator);
+                    SyncUpHandler(dataPacket, communicator, server, clientID);
                     break;
                 case DataPacket.PacketType.Metadata:
                     MetadataHandler(dataPacket, communicator, clientID);
@@ -154,10 +191,13 @@ public class ServerNotificationHandler : INotificationHandler
         }
     }
 
-    private static void SyncUpHandler(DataPacket dataPacket, ICommunicator communicator)
+    private static void SyncUpHandler(DataPacket dataPacket, ICommunicator communicator, Server server, string clientId)
     {
         try
         {
+            // Start new thread for client for communication
+            Thread thread = new Thread(() => server.RequestSyncUp(clientId));
+            thread.Start();
         }
         catch (Exception ex)
         {
