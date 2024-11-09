@@ -11,12 +11,14 @@
 *****************************************************************************/
 
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using Networking.Serialization;
 
 namespace Updater;
 
 public class Utils
 {
+    public static List<FileContent> ExistingFiles { get; set; } = new List<FileContent>();
 
     /// <summary>
     /// Reads the content of the specified file.
@@ -128,5 +130,119 @@ public class Utils
 
         DataPacket dataPacket = new DataPacket(DataPacket.PacketType.Metadata, fileContents);
         return SerializeObject(dataPacket);
+    }
+
+    /// <summary>
+    /// Get the get version of the file.
+    /// </summary>
+    /// <param name="filepath"></param>
+    /// <returns></returns>
+    /// <exception cref="FileNotFoundException"></exception>
+    /// <exception cref="FormatException"></exception>
+    public static string GetCurrentVersion(string filepath)
+    {
+        try
+        {
+            if (!File.Exists(filepath))
+            {
+                throw new FileNotFoundException($"File not found at {filepath}");
+            }
+
+            using (StreamReader reader = new StreamReader(filepath))
+            {
+                string? line = reader.ReadLine();
+
+                if (line != null && line.StartsWith("Version:"))
+                {
+                    return line.Substring("Version".Length).Trim();
+                }
+                else
+                {
+                    throw new FormatException("Version information not found in the expected format");
+                }
+
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in GetCurrentVersion: {ex.Message}");
+            return string.Empty;
+        }
+    }
+
+    /// <summary>
+    /// Keeps filenames in versioned format
+    /// </summary>
+    /// <param name="fileName"></param>
+    /// <param name="newFileVersion"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
+    public static string StandardizeFileName(string? fileName, string newFileVersion)
+    {
+        if (string.IsNullOrEmpty(fileName))
+        {
+            throw new ArgumentException("File name cannot be null or empty", nameof(fileName));
+        }
+
+        if (string.IsNullOrEmpty(newFileVersion))
+        {
+            throw new ArgumentException("New file version cannot be null or empty", nameof(newFileVersion));
+        }
+
+        // Extract file name and extension
+        string fileExtension = Path.GetExtension(fileName);
+        string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
+
+        // Regex pattern to detect a version suffix (e.g., _v1.0)
+        string versionPattern = @"(_v\d+(\.\d+)*)$";
+
+        // Check if the filename already has a version suffix and remove it if present
+        if (Regex.IsMatch(fileNameWithoutExtension, versionPattern))
+        {
+            fileNameWithoutExtension = Regex.Replace(fileNameWithoutExtension, versionPattern, "");
+        }
+
+        // Append the new version to the filename in the format _v<newVersion>
+        string standardizedFileName = $"{fileNameWithoutExtension}_v{newFileVersion}{fileExtension}";
+
+        return standardizedFileName;
+    }
+
+    /// <summary>
+    /// Finds a file in the existing files list that has the same content as the target file, 
+    /// regardless of the file name or version.
+    /// </summary>
+    /// <param name="targetFile">The file content to compare with existing files.</param>
+    /// <returns>A similar FileContent if found, otherwise null.</returns>
+    public static FileContent? FindSimilarContentFile(FileContent targetFile)
+    {
+        if (targetFile.FileName == null || targetFile.SerializedContent == null)
+        {
+            throw new ArgumentException("Target file must have a name and content.");
+        }
+
+        // If there are multiple similar files, prefer an exact content match
+        foreach (var file in ExistingFiles)
+        {
+            if (file.SerializedContent == targetFile.SerializedContent)
+            {
+                return file;
+            }
+        }
+
+        // Return the first similar file by name if no content matches are found
+        return null;
+    }
+
+    /// <summary>
+    /// Removes the version suffix (e.g., "_v1.0") from the file name.
+    /// </summary>
+    /// <param name="fileName">The file name to process.</param>
+    /// <returns>The file name without the version suffix.</returns>
+    public static string RemoveVersionSuffix(string fileName)
+    {
+        // Regex pattern to detect and remove a version suffix, e.g., _v1.0 or _v1
+        string versionPattern = @"(_v\d+(\.\d+)*)$";
+        return Regex.Replace(Path.GetFileNameWithoutExtension(fileName), versionPattern, "");
     }
 }

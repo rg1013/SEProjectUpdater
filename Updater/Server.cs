@@ -14,6 +14,7 @@ using Networking.Communication;
 using Networking;
 using System.Net.Sockets;
 using System.Diagnostics;
+using System.Threading.Tasks.Dataflow;
 
 namespace Updater;
 
@@ -226,7 +227,7 @@ public class Server
         {
             try
             {
-                NotifyClients("Recieved files from client");
+                NotifyClients($"Recieved files from client {clientID}");
                 // File list
                 List<FileContent> fileContentList = dataPacket.FileContentList;
 
@@ -272,6 +273,123 @@ public class Server
             }
         }
 
+        private static void HandleNewFileVersion(DataPacket dataPacket, ICommunicator communicator)
+        {
+            try
+            {
+                List<FileContent> fileContentList = dataPacket.FileContentList;
+
+                foreach (FileContent fileContent in fileContentList)
+                {
+                    if (fileContent != null && fileContent.SerializedContent != null && fileContent.FileName != null && fileContent.Version != null)
+                    {
+                        string newFileVersion = fileContent.Version;
+                        string standardizedFileName = Utils.StandardizeFileName(fileContent.FileName, newFileVersion);
+                        string newFilePath = Path.Combine(_serverDirectory, standardizedFileName);
+
+                        var existingFile = Utils.FindSimilarContentFile(fileContent);
+
+                        if (existingFile != null)
+                        {
+                            // Handle version conflict: replace existing file if the new version is higher
+                            HandleVersionConflict(existingFile.FileName, fileContent, newFileVersion, communicator);
+                        }
+                        else
+                        {
+                            // No existing file found, so proceed to add the new file
+                            ProcessNewFile(fileContent, newFilePath, communicator);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log and handle exceptions
+                Console.WriteLine($"Error in HandleNewFileVersion: {ex.Message}");
+            }
+        }
+
+        // Method to handle the case when a version conflict is detected
+        private static void HandleVersionConflict(string existingFileName, FileContent newFileContent, string newFileVersion, ICommunicator communicator)
+        {
+            string existingFilePath = Path.Combine(_serverDirectory, existingFileName);
+            string existingFileVersion = Utils.GetCurrentVersion(existingFilePath);
+
+            if (string.Compare(newFileVersion, existingFileVersion) > 0)
+            {
+                // New version is higher, replace the old file and broadcast the update
+                string standardizedFileName = Utils.StandardizeFileName(existingFileName, newFileVersion);
+                bool writeStatus = Utils.WriteToFileFromBinary(existingFilePath, newFileContent.SerializedContent);
+
+                if (writeStatus)
+                {
+                    Console.WriteLine($"File '{existingFileName}' updated from version {existingFileVersion} to {newFileVersion}");
+                    BroadcastNewVersion(standardizedFileName, newFileVersion, communicator);
+                }
+            }
+        }
+
+        // Method to process a new file (no version conflict)
+        private static void ProcessNewFile(FileContent fileContent, string newFilePath, ICommunicator communicator)
+        {
+            try
+            {
+                // Write the new file to disk
+                File.WriteAllText(newFilePath, fileContent.SerializedContent);
+                Utils.ExistingFiles.Add(fileContent);
+
+                // Prepare and serialize DataPacket for broadcasting
+                DataPacket updatedPacket = new DataPacket(DataPacket.PacketType.Broadcast, new List<FileContent> { fileContent });
+                string serializedUpdatePacket = Utils.SerializeObject(updatedPacket);
+
+                // Notify clients and broadcast the new file version
+                NotifyClients($"Broadcasting the new files with version {fileContent.Version}");
+                Trace.WriteLine("[Updater] Broadcasting the new versioned file");
+
+                try
+                {
+                    communicator.Send(serializedUpdatePacket, "ClientMetadataHandler", null); // Broadcast to all clients
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine($"[Updater] Error sending data to client: {ex.Message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"Error processing new file {fileContent.FileName}: {ex.Message}");
+            }
+        }
+
+        // Method to broadcast a new file version to clients
+        private static void BroadcastNewVersion(string fileName, string fileVersion, ICommunicator communicator)
+        {
+            try
+            {
+                // Create FileContent for the updated file
+                FileContent updatedFileContent = new FileContent
+                {
+                    FileName = fileName,
+                    Version = fileVersion,
+                    SerializedContent = File.ReadAllText(Path.Combine(_serverDirectory, fileName))
+                };
+
+                // Create and serialize DataPacket
+                DataPacket updatedPacket = new DataPacket(DataPacket.PacketType.Broadcast, new List<FileContent> { updatedFileContent });
+                string serializedUpdatePacket = Utils.SerializeObject(updatedPacket);
+
+                // Broadcast the update
+                communicator.Send(serializedUpdatePacket, "ClientMetadataHandler", null);
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"Error broadcasting new version: {ex.Message}");
+            }
+        }
+
+
+
+
         public void OnDataReceived(string serializedData)
         {
             semaphore.Wait(); // Wait until it's safe to enter
@@ -285,8 +403,18 @@ public class Server
                 }
                 else
                 {
+                    
                     Trace.WriteLine("[Updater] Read received data Successfully");
-                    PacketDemultiplexer(serializedData, _communicator, clientID);
+                    if (deserializedData.FileContentList != null && deserializedData.FileContentList.Any())
+                    {
+                        // Handle new file versioning
+                        HandleNewFileVersion(deserializedData, _communicator);
+                    }
+                    else
+                    {
+                        // Call the existing packet demultiplexer if there is no file content
+                        PacketDemultiplexer(serializedData, _communicator, clientID);
+                    }
                 }
 
             }
