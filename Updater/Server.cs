@@ -44,8 +44,8 @@ public class Server
             UpdateUILogs($"Server started on {result}");
             UpdateUILogs($"Monitoring {_serverDirectory}");
 
-            // Subscribing the "ServerNotificationHandler" for handling notifications
-            _communicator.Subscribe("ServerNotificationHandler", new ServerNotificationHandler(_communicator, this));
+            // Subscribing the "ClientMetadataHandler" for handling notifications
+            _communicator.Subscribe("ClientMetadataHandler", new ClientMetadataHandler(_communicator, this));
         }
         catch (Exception ex)
         {
@@ -84,7 +84,7 @@ public class Server
             Trace.WriteLine($"[Updater] Sending SyncUp request dataPacket to client: {clientId}");
             if (_communicator != null)
             {
-                _communicator.Send(serializedSyncUpPacket, "ServerNotificationHandler", clientId);
+                _communicator.Send(serializedSyncUpPacket, "ClientMetadataHandler", clientId);
             }
             else
             {
@@ -139,7 +139,7 @@ public class Server
 /// <summary>
 /// INotificationHandler Implementation in Server side
 /// </summary>
-public class ServerNotificationHandler : INotificationHandler
+public class ClientMetadataHandler : INotificationHandler
 {
     public string clientID = "";
     private readonly ICommunicator _communicator;
@@ -148,11 +148,11 @@ public class ServerNotificationHandler : INotificationHandler
     private static int clientCounter = 0;
 
     /// <summary>
-    /// Constructor for ServerNotificationHandler
+    /// Constructor for ClientMetadataHandler
     /// </summary>
     /// <param name="communicator">Communicator object</param>
     /// <param name="server">Server object</param>
-    public ServerNotificationHandler(ICommunicator communicator, Server server)
+    public ClientMetadataHandler(ICommunicator communicator, Server server)
     {
         _communicator = communicator;
         _server = server;
@@ -333,7 +333,7 @@ public class ServerNotificationHandler : INotificationHandler
             try
             {
                 Server.UpdateUILogs($"Sending files to client and waiting to recieve files from client {clientID}");
-                communicator.Send(serializedDataPacket, "ServerNotificationHandler", clientID);
+                communicator.Send(serializedDataPacket, "ClientMetadataHandler", clientID);
             }
             catch (Exception ex)
             {
@@ -390,7 +390,7 @@ public class ServerNotificationHandler : INotificationHandler
             Trace.WriteLine("[Updater] Broadcasting the new files");
             try
             {
-                communicator.Send(serializedPacket, "ServerNotificationHandler", null); // Broadcast to all clients
+                communicator.Send(serializedPacket, "ClientMetadataHandler", null); // Broadcast to all clients
             }
             catch (Exception ex)
             {
@@ -411,7 +411,7 @@ public class ServerNotificationHandler : INotificationHandler
     {
         try
         {
-            Trace.WriteLine("[Updater] ServerNotificationHandler received data");
+            Trace.WriteLine("[Updater] ClientMetadataHandler received data");
             DataPacket deserializedData = Utils.DeserializeObject<DataPacket>(serializedData);
             if (deserializedData == null)
             {
@@ -441,7 +441,7 @@ public class ServerNotificationHandler : INotificationHandler
             string clientId = $"Client{Interlocked.Increment(ref clientCounter)}"; // Use Interlocked for thread safety
             clientID = clientId;
 
-            Trace.WriteLine($"[Updater] ServerNotificationHandler detected new client connection: {socket.Client.RemoteEndPoint}, assigned ID: {clientId}");
+            Trace.WriteLine($"[Updater] ClientMetadataHandler detected new client connection: {socket.Client.RemoteEndPoint}, assigned ID: {clientId}");
             Server.UpdateUILogs($"Detected new client connection: {socket.Client.RemoteEndPoint}, assigned ID: {clientId}");
 
             clientConnections.Add(clientId, socket); // Add client connection to the dictionary
@@ -464,7 +464,7 @@ public class ServerNotificationHandler : INotificationHandler
             if (clientConnections.Remove(clientId))
             {
                 Server.UpdateUILogs("Detected client {clientId} disconnected");
-                Trace.WriteLine($"[Updater] ServerNotificationHandler detected client {clientId} disconnected");
+                Trace.WriteLine($"[Updater] ClientMetadataHandler detected client {clientId} disconnected");
             }
             else
             {
