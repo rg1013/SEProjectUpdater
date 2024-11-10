@@ -99,7 +99,6 @@ public class Client
                         MetadataHandler(dataPacket, communicator);
                         break;
                     case DataPacket.PacketType.Broadcast:
-                        Console.WriteLine("Found broadcast files");
                         BroadcastHandler(dataPacket, communicator);
                         break;
                     case DataPacket.PacketType.ClientFiles:
@@ -133,7 +132,7 @@ public class Client
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in SyncUpHandler: {ex.Message}");
+                Trace.WriteLine($"Error in SyncUpHandler: {ex.Message}");
             }
         }
 
@@ -145,7 +144,7 @@ public class Client
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in MetadataHandler: {ex.Message}");
+                Trace.WriteLine($"Error in MetadataHandler: {ex.Message}");
             }
         }
 
@@ -176,7 +175,7 @@ public class Client
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Updater] Error in BroadcastHandler: {ex.Message}");
+                Trace.WriteLine($"[Updater] Error in BroadcastHandler: {ex.Message}");
             }
         }
 
@@ -188,7 +187,7 @@ public class Client
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in ClientFilesHandler: {ex.Message}");
+                Trace.WriteLine($"Error in ClientFilesHandler: {ex.Message}");
             }
         }
 

@@ -190,7 +190,7 @@ public class ServerNotificationHandler : INotificationHandler
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in PacketDemultiplexer: {ex.Message}");
+            Trace.WriteLine($"Error in PacketDemultiplexer: {ex.Message}");
         }
     }
 
@@ -305,7 +305,7 @@ public class ServerNotificationHandler : INotificationHandler
 
                 if (content == null)
                 {
-                    Console.WriteLine($"Warning: Content of file {filename} is null, skipping.");
+                    Trace.WriteLine($"Warning: Content of file {filename} is null, skipping.");
                     continue; // Skip to the next file instead of throwing an exception
                 }
 
@@ -415,7 +415,7 @@ public class ServerNotificationHandler : INotificationHandler
             DataPacket deserializedData = Utils.DeserializeObject<DataPacket>(serializedData);
             if (deserializedData == null)
             {
-                Console.WriteLine("Deserialized data is null.");
+                Trace.WriteLine("Deserialized data is null.");
             }
             else
             {
