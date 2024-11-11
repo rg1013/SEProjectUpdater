@@ -17,16 +17,18 @@ using System.Diagnostics;
 
 namespace Updater;
 
-public class Server
+public class Server : INotificationHandler
 {
     static int clientCounter = 0; // Counter for unique client IDs
     public static string _serverDirectory = AppConstants.ToolsDirectory;
 
-    public BinarySemaphore semaphore = new BinarySemaphore();
+    public BinarySemaphore semaphore = new();
 
     private ICommunicator? _communicator;
 
     public static event Action<string>? NotificationReceived; // Event to notify the view model
+    public string clientID = "";
+    private readonly Dictionary<string, TcpClient> clientConnections = []; // Track clients
 
     /// <summary>
     /// Start the server
@@ -44,8 +46,8 @@ public class Server
             UpdateUILogs($"Server started on {result}");
             UpdateUILogs($"Monitoring {_serverDirectory}");
 
-            // Subscribing the "ClientMetadataHandler" for handling notifications
-            _communicator.Subscribe("ClientMetadataHandler", new ClientMetadataHandler(_communicator, this));
+            // Subscribing the "FileTransferHandler" for handling notifications
+            _communicator.Subscribe("FileTransferHandler", this);
         }
         catch (Exception ex)
         {
@@ -77,14 +79,15 @@ public class Server
     {
         try
         {
+            UpdateUILogs($"Sending sync up request to client {clientId}");
             string serializedSyncUpPacket = Utils.SerializedSyncUpPacket();
 
             // Write equivalent of this: 
-            // ReceiveData("Syncing Up with the server");
+            // UpdateUILogs("Syncing Up with the server");
             Trace.WriteLine($"[Updater] Sending SyncUp request dataPacket to client: {clientId}");
             if (_communicator != null)
             {
-                _communicator.Send(serializedSyncUpPacket, "ClientMetadataHandler", clientId);
+                _communicator.Send(serializedSyncUpPacket, "FileTransferHandler", clientId);
             }
             else
             {
@@ -106,6 +109,7 @@ public class Server
         try
         {
             semaphore.Wait();
+            clientID = clientId;
             SyncUp(clientId);
         }
         catch (Exception ex)
@@ -134,29 +138,9 @@ public class Server
     {
         NotificationReceived?.Invoke(message);
     }
-}
 
-/// <summary>
-/// INotificationHandler Implementation in Server side
-/// </summary>
-public class ClientMetadataHandler : INotificationHandler
-{
-    public string clientID = "";
-    private readonly ICommunicator _communicator;
-    private readonly Server _server;
-    private readonly Dictionary<string, TcpClient> clientConnections = new Dictionary<string, TcpClient>(); // Track clients
-    private static int clientCounter = 0;
 
-    /// <summary>
-    /// Constructor for ClientMetadataHandler
-    /// </summary>
-    /// <param name="communicator">Communicator object</param>
-    /// <param name="server">Server object</param>
-    public ClientMetadataHandler(ICommunicator communicator, Server server)
-    {
-        _communicator = communicator;
-        _server = server;
-    }
+
 
     /// <summary>
     /// Demultiplex the data packet
@@ -164,8 +148,8 @@ public class ClientMetadataHandler : INotificationHandler
     /// <param name="serializedData">Serialized data packet</param>
     /// <param name="communicator">Communicator object</param>
     /// <param name="server">Server object</param>
-    /// <param name="clientID">Client ID</param>
-    public static void PacketDemultiplexer(string serializedData, ICommunicator communicator, Server server, string clientID)
+    /// <param name="clientId">Client ID</param>
+    public static void PacketDemultiplexer(string serializedData, ICommunicator communicator, Server server, string clientId)
     {
         try
         {
@@ -176,13 +160,13 @@ public class ClientMetadataHandler : INotificationHandler
             switch (dataPacket.DataPacketType)
             {
                 case DataPacket.PacketType.SyncUp:
-                    SyncUpHandler(dataPacket, communicator, server, clientID);
+                    SyncUpHandler(dataPacket, communicator, server, clientId);
                     break;
                 case DataPacket.PacketType.Metadata:
-                    MetadataHandler(dataPacket, communicator, clientID);
+                    MetadataHandler(dataPacket, communicator, clientId);
                     break;
                 case DataPacket.PacketType.ClientFiles:
-                    ClientFilesHandler(dataPacket, communicator, server, clientID);
+                    ClientFilesHandler(dataPacket, communicator, server, clientId);
                     break;
                 default:
                     throw new Exception("Invalid PacketType");
@@ -220,16 +204,18 @@ public class ClientMetadataHandler : INotificationHandler
     /// </summary>
     /// <param name="dataPacket">Data packet</param>
     /// <param name="communicator">Communicator object</param>
-    /// <param name="clientID">Client ID</param>
-    private static void MetadataHandler(DataPacket dataPacket, ICommunicator communicator, string clientID)
+    /// <param name="clientId">Client ID</param>
+    private static void MetadataHandler(DataPacket dataPacket, ICommunicator communicator, string clientId)
     {
         try
         {
+            UpdateUILogs($"Received {clientId} metadata");
             // Extract metadata of client directory
             List<FileContent> fileContents = dataPacket.FileContentList;
 
             if (!fileContents.Any())
             {
+                UpdateUILogs("No file content received in the data packet.");
                 throw new Exception("No file content received in the data packet.");
             }
 
@@ -251,15 +237,17 @@ public class ClientMetadataHandler : INotificationHandler
             }
             if (metadataClient == null)
             {
+                UpdateUILogs("Deserialized client metadata is null");
                 throw new Exception("[Updater] Deserialized client metadata is null");
             }
 
             Trace.WriteLine("[Updater]: Metadata from client received");
 
             // Generate metadata of server
-            List<FileMetadata>? metadataServer = new DirectoryMetadataGenerator(Server._serverDirectory).GetMetadata();
+            List<FileMetadata>? metadataServer = new DirectoryMetadataGenerator(_serverDirectory).GetMetadata();
             if (metadataServer == null)
             {
+                UpdateUILogs("Metadata server is null");
                 throw new Exception("Metadata server is null");
             }
             Trace.WriteLine("[Updater] Metadata from server generated");
@@ -332,8 +320,8 @@ public class ClientMetadataHandler : INotificationHandler
 
             try
             {
-                Server.UpdateUILogs($"Sending files to client and waiting to recieve files from client {clientID}");
-                communicator.Send(serializedDataPacket, "ClientMetadataHandler", clientID);
+                Server.UpdateUILogs($"Sending files to client and waiting to recieve files from client {clientId}");
+                communicator.Send(serializedDataPacket, "FileTransferHandler", clientId);
             }
             catch (Exception ex)
             {
@@ -352,8 +340,8 @@ public class ClientMetadataHandler : INotificationHandler
     /// <param name="dataPacket">Data packet</param>
     /// <param name="communicator">Communicator object</param>
     /// <param name="server">Server object</param>
-    /// <param name="clientID">Client ID</param>
-    private static void ClientFilesHandler(DataPacket dataPacket, ICommunicator communicator, Server server, string clientID)
+    /// <param name="clientId">Client ID</param>
+    private static void ClientFilesHandler(DataPacket dataPacket, ICommunicator communicator, Server server, string clientId)
     {
         try
         {
@@ -390,7 +378,7 @@ public class ClientMetadataHandler : INotificationHandler
             Trace.WriteLine("[Updater] Broadcasting the new files");
             try
             {
-                communicator.Send(serializedPacket, "ClientMetadataHandler", null); // Broadcast to all clients
+                communicator.Send(serializedPacket, "FileTransferHandler", null); // Broadcast to all clients
             }
             catch (Exception ex)
             {
@@ -411,7 +399,7 @@ public class ClientMetadataHandler : INotificationHandler
     {
         try
         {
-            Trace.WriteLine("[Updater] ClientMetadataHandler received data");
+            Trace.WriteLine("[Updater] FileTransferHandler received data");
             DataPacket deserializedData = Utils.DeserializeObject<DataPacket>(serializedData);
             if (deserializedData == null)
             {
@@ -420,7 +408,7 @@ public class ClientMetadataHandler : INotificationHandler
             else
             {
                 Trace.WriteLine("[Updater] Read received data Successfully");
-                PacketDemultiplexer(serializedData, _communicator, _server, clientID);
+                PacketDemultiplexer(serializedData, _communicator, this, clientID);
             }
 
         }
@@ -439,16 +427,15 @@ public class ClientMetadataHandler : INotificationHandler
         {
             // Generate a unique client ID
             string clientId = $"Client{Interlocked.Increment(ref clientCounter)}"; // Use Interlocked for thread safety
-            clientID = clientId;
 
-            Trace.WriteLine($"[Updater] ClientMetadataHandler detected new client connection: {socket.Client.RemoteEndPoint}, assigned ID: {clientId}");
+            Trace.WriteLine($"[Updater] FileTransferHandler detected new client connection: {socket.Client.RemoteEndPoint}, assigned ID: {clientId}");
             Server.UpdateUILogs($"Detected new client connection: {socket.Client.RemoteEndPoint}, assigned ID: {clientId}");
 
             clientConnections.Add(clientId, socket); // Add client connection to the dictionary
-            _communicator.AddClient(clientId, socket); // Use the unique client ID
+            _communicator?.AddClient(clientId, socket); // Use the unique client ID
 
             // Start new thread for client for communication
-            Thread thread = new Thread(() => _server.RequestSyncUp(clientId));
+            Thread thread = new Thread(() => this.RequestSyncUp(clientId));
             thread.Start();
         }
         catch (Exception ex)
@@ -463,8 +450,8 @@ public class ClientMetadataHandler : INotificationHandler
         {
             if (clientConnections.Remove(clientId))
             {
-                Server.UpdateUILogs("Detected client {clientId} disconnected");
-                Trace.WriteLine($"[Updater] ClientMetadataHandler detected client {clientId} disconnected");
+                Server.UpdateUILogs($"Detected client {clientId} disconnected");
+                Trace.WriteLine($"[Updater] FileTransferHandler detected client {clientId} disconnected");
             }
             else
             {
@@ -477,3 +464,4 @@ public class ClientMetadataHandler : INotificationHandler
         }
     }
 }
+
