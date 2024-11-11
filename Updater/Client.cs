@@ -19,7 +19,7 @@ namespace Updater;
 public class Client : INotificationHandler
 {
     private readonly ICommunicator _communicator;
-    private static readonly string _clientDirectory = AppConstants.ToolsDirectory;
+    private static readonly string s_clientDirectory = AppConstants.ToolsDirectory;
 
     public Client(ICommunicator communicator)
     {
@@ -155,7 +155,7 @@ public class Client : INotificationHandler
                 {
                     // Deserialize the content based on expected format
                     string content = Utils.DeserializeObject<string>(fileContent.SerializedContent);
-                    string filePath = Path.Combine(_clientDirectory, fileContent.FileName);
+                    string filePath = Path.Combine(s_clientDirectory, fileContent.FileName);
                     bool status = Utils.WriteToFileFromBinary(filePath, content);
                     if (!status)
                     {
@@ -226,7 +226,7 @@ public class Client : INotificationHandler
                         content = Utils.DeserializeObject<string>(decodedContent);
                     }
 
-                    string filePath = Path.Combine(_clientDirectory, fileContent.FileName ?? "Unnamed_file");
+                    string filePath = Path.Combine(s_clientDirectory, fileContent.FileName ?? "Unnamed_file");
                     bool status = Utils.WriteToFileFromBinary(filePath, content);
                     if (!status)
                     {
@@ -255,20 +255,9 @@ public class Client : INotificationHandler
                 }
                 if (filename != null)
                 {
-                    string filePath = Path.Combine(_clientDirectory, filename);
-                    string? content = Utils.ReadBinaryFile(filePath);
-
-                    if (content == null)
-                    {
-                        throw new Exception("Failed to read file");
-                    }
-
-                    string? serializedContent = Utils.SerializeObject(content);
-                    if (serializedContent == null)
-                    {
-                        throw new Exception("Failed to serialize content");
-                    }
-
+                    string filePath = Path.Combine(s_clientDirectory, filename);
+                    string? content = Utils.ReadBinaryFile(filePath) ?? throw new Exception("Failed to read file");
+                    string? serializedContent = Utils.SerializeObject(content) ?? throw new Exception("Failed to serialize content");
                     FileContent fileContent = new FileContent(filename, serializedContent);
                     fileContentToSend.Add(fileContent);
                 }

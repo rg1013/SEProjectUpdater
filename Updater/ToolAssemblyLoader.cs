@@ -36,16 +36,16 @@ public class ToolAssemblyLoader : IToolAssemblyLoader
     /// <param name="folder">Path to the target folder</param>
     public Dictionary<string, List<string>> LoadToolsFromFolder(string folder)
     {
-        Dictionary<string, List<string>> toolPropertyMap = new Dictionary<string, List<string>>();
+        Dictionary<string, List<string>> toolPropertyMap = [];
 
         try
         {
             // Ensure the folder exists, if not, create it
             if (!Directory.Exists(folder))
             {
-                Trace.WriteLine($"Directory '{folder}' does not exist. Creating it...");
+                Trace.WriteLine($"[Updater] Directory '{folder}' does not exist. Creating it...");
                 Directory.CreateDirectory(folder);
-                Trace.WriteLine($"Directory '{folder}' created successfully.");
+                Trace.WriteLine($"[Updater] Directory '{folder}' created successfully.");
                 return toolPropertyMap; // Exit function if folder is newly created, as it would be empty
             }
 
@@ -66,7 +66,7 @@ public class ToolAssemblyLoader : IToolAssemblyLoader
                         try
                         {
                             Assembly assembly = Assembly.LoadFrom(file);
-                            Trace.WriteLine($"Assembly: {assembly.FullName}");
+                            Trace.WriteLine($"[Updater] Assembly: {assembly.FullName}");
 
                             Type toolInterface = typeof(ITool);
                             Type[] types = assembly.GetTypes();
@@ -85,7 +85,7 @@ public class ToolAssemblyLoader : IToolAssemblyLoader
                                         object? instance = Activator.CreateInstance(type);
                                         if (instance != null)
                                         {
-                                            Trace.WriteLine($"Instance of {type.FullName} created successfully!");
+                                            Trace.WriteLine($"[Updater] Instance of {type.FullName} created successfully!");
 
                                             PropertyInfo[] properties = toolInterface.GetProperties();
                                             foreach (PropertyInfo property in properties)
@@ -102,39 +102,37 @@ public class ToolAssemblyLoader : IToolAssemblyLoader
                                                     {
                                                         toolPropertyMap[$"{property.Name}"] = new List<string> { $"{value}" };  // creating a new list for values for new key
                                                     }
-
-                                                    Trace.WriteLine($"{property.Name} = {value}");
                                                 }
                                             }
                                         }
 
                                         else
                                         {
-                                            throw new InvalidOperationException($"Failed to create instance for {type.FullName}. Constructor might be missing or inaccessible.");
+                                            throw new InvalidOperationException($"[Updater] Failed to create instance for {type.FullName}. Constructor might be missing or inaccessible.");
                                         }
                                     }
                                     catch (Exception ex)
                                     {
-                                        throw new InvalidOperationException($"Failed to create an instance of {type.FullName}: {ex.Message}", ex);
+                                        throw new InvalidOperationException($"[Updater] Failed to create an instance of {type.FullName}: {ex.Message}", ex);
                                     }
                                 }
                             }
                         }
                         catch (Exception e)
                         {
-                            Trace.WriteLine($"Error while processing {file}: {e.Message}");
+                            Trace.WriteLine($"[Updater] Error while processing {file}: {e.Message}");
                         }
                     }
                     else
                     {
-                        Trace.WriteLine($"Invalid Target Framework for Assembly {fileAssembly.GetName()}.");
+                        Trace.WriteLine($"[Updater] Invalid Target Framework for Assembly {fileAssembly.GetName()}.");
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            throw new Exception($"Unexpected error: {ex.Message}", ex);
+            throw new Exception($"[Updater] Unexpected error: {ex.Message}", ex);
         }
         return toolPropertyMap;
     }

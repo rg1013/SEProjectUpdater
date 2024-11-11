@@ -1,4 +1,4 @@
-/******************************************************************************
+﻿/******************************************************************************
 * Filename    = Server.cs
 *
 * Author      = Amithabh A and Garima Ranjan
@@ -19,16 +19,16 @@ namespace Updater;
 
 public class Server : INotificationHandler
 {
-    static int clientCounter = 0; // Counter for unique client IDs
-    public static string _serverDirectory = AppConstants.ToolsDirectory;
+    static int s_clientCounter = 0; // Counter for unique client IDs
+    private static readonly string s_serverDirectory = AppConstants.ToolsDirectory;
 
-    public BinarySemaphore semaphore = new();
+    private readonly BinarySemaphore _semaphore = new();
 
     private ICommunicator? _communicator;
 
     public static event Action<string>? NotificationReceived; // Event to notify the view model
-    public string clientID = "";
-    private readonly Dictionary<string, TcpClient> clientConnections = []; // Track clients
+    public string _clientID = "";
+    private readonly Dictionary<string, TcpClient> _clientConnections = []; // Track clients
 
     /// <summary>
     /// Start the server
@@ -44,7 +44,7 @@ public class Server : INotificationHandler
             // Starting the server
             string result = _communicator.Start(ip, port);
             UpdateUILogs($"Server started on {result}");
-            UpdateUILogs($"Monitoring {_serverDirectory}");
+            UpdateUILogs($"Monitoring {s_serverDirectory}");
 
             // Subscribing the "FileTransferHandler" for handling notifications
             _communicator.Subscribe("FileTransferHandler", this);
@@ -108,8 +108,8 @@ public class Server : INotificationHandler
     {
         try
         {
-            semaphore.Wait();
-            clientID = clientId;
+            _semaphore.Wait();
+            _clientID = clientId;
             SyncUp(clientId);
         }
         catch (Exception ex)
@@ -120,13 +120,13 @@ public class Server : INotificationHandler
 
 
     /// <summary>
-    /// Complete the sync by Signalling semaphore
+    /// Complete the sync by Signalling _semaphore
     /// </summary>
     public void CompleteSync()
     {
         try
         {
-            semaphore.Signal();
+            _semaphore.Signal();
         }
         catch (Exception ex)
         {
@@ -244,7 +244,7 @@ public class Server : INotificationHandler
             Trace.WriteLine("[Updater]: Metadata from client received");
 
             // Generate metadata of server
-            List<FileMetadata>? metadataServer = new DirectoryMetadataGenerator(_serverDirectory).GetMetadata();
+            List<FileMetadata>? metadataServer = new DirectoryMetadataGenerator(s_serverDirectory).GetMetadata();
             if (metadataServer == null)
             {
                 UpdateUILogs("Metadata server is null");
@@ -254,11 +254,11 @@ public class Server : INotificationHandler
 
             // Compare metadata and get differences
             DirectoryMetadataComparer comparerInstance = new DirectoryMetadataComparer(metadataServer, metadataClient);
-            var differences = comparerInstance.Differences;
+            List<MetadataDifference> differences = comparerInstance.Differences;
 
             // Serialize and save differences to C:\temp\ folder
             string serializedDifferences = Utils.SerializeObject(differences);
-            string tempFilePath = @$"{Server._serverDirectory}\differences.xml";
+            string tempFilePath = @$"{Server.s_serverDirectory}\differences.xml";
 
             if (string.IsNullOrEmpty(serializedDifferences))
             {
@@ -288,7 +288,7 @@ public class Server : INotificationHandler
             // Retrieve and add unique server files to fileContentsToSend
             foreach (string filename in comparerInstance.UniqueServerFiles)
             {
-                string filePath = Path.Combine(Server._serverDirectory, filename);
+                string filePath = Path.Combine(Server.s_serverDirectory, filename);
                 string? content = Utils.ReadBinaryFile(filePath);
 
                 if (content == null)
@@ -355,7 +355,7 @@ public class Server : INotificationHandler
                 if (fileContent != null && fileContent.SerializedContent != null && fileContent.FileName != null)
                 {
                     string content = Utils.DeserializeObject<string>(fileContent.SerializedContent);
-                    string filePath = Path.Combine(Server._serverDirectory, fileContent.FileName);
+                    string filePath = Path.Combine(Server.s_serverDirectory, fileContent.FileName);
                     bool status = Utils.WriteToFileFromBinary(filePath, content);
 
                     if (!status)
@@ -408,7 +408,7 @@ public class Server : INotificationHandler
             else
             {
                 Trace.WriteLine("[Updater] Read received data Successfully");
-                PacketDemultiplexer(serializedData, _communicator, this, clientID);
+                PacketDemultiplexer(serializedData, _communicator, this, _clientID);
             }
 
         }
@@ -426,12 +426,12 @@ public class Server : INotificationHandler
         try
         {
             // Generate a unique client ID
-            string clientId = $"Client{Interlocked.Increment(ref clientCounter)}"; // Use Interlocked for thread safety
+            string clientId = $"Client{Interlocked.Increment(ref s_clientCounter)}"; // Use Interlocked for thread safety
 
             Trace.WriteLine($"[Updater] FileTransferHandler detected new client connection: {socket.Client.RemoteEndPoint}, assigned ID: {clientId}");
             Server.UpdateUILogs($"Detected new client connection: {socket.Client.RemoteEndPoint}, assigned ID: {clientId}");
 
-            clientConnections.Add(clientId, socket); // Add client connection to the dictionary
+            _clientConnections.Add(clientId, socket); // Add client connection to the dictionary
             _communicator?.AddClient(clientId, socket); // Use the unique client ID
 
             // Start new thread for client for communication
@@ -448,7 +448,7 @@ public class Server : INotificationHandler
     {
         try
         {
-            if (clientConnections.Remove(clientId))
+            if (_clientConnections.Remove(clientId))
             {
                 Server.UpdateUILogs($"Detected client {clientId} disconnected");
                 Trace.WriteLine($"[Updater] FileTransferHandler detected client {clientId} disconnected");
