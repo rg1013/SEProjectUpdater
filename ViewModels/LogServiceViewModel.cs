@@ -30,7 +30,7 @@ namespace ViewModels
         private string _notificationMessage = "";  // Stores the current notification message
         private bool _notificationVisible = false;  // Controls whether the notification is visible
         private string _toolsDirectoryMessage;  // Message for displaying the tools directory
-        private bool _isLogExpanded = true;  // Tracks whether the log section is expanded or collapsed
+        private bool _isLogExpanded = false;  // Tracks whether the log section is expanded or collapsed
         private DispatcherTimer _timer;  // Timer to auto-hide notifications after a set interval
 
         ///<summary>

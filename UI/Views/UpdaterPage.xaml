@@ -97,7 +97,7 @@
         <StackPanel Margin="10" Grid.Row="1">
             <TextBlock Text="Available Tools" FontSize="16" FontWeight="Bold" Foreground="Black" Margin="0,20,0,10"/>
             <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <ListView x:Name="ToolViewList" ItemsSource="{Binding AvailableToolsList}" Margin="0,0,0,0" BorderThickness="2" BorderBrush="Black">
+                <ListView x:Name="ToolViewList" ItemsSource="{Binding AvailableToolsList}" Margin="0,0,0,0" BorderThickness="2" BorderBrush="Black" Height="120">
                     <ListView.View>
                         <GridView>
                             <GridViewColumn Header="ID" DisplayMemberBinding="{Binding ID}" Width="50" />
@@ -118,17 +118,21 @@
         <StackPanel Margin="10" Grid.Row="2">
             <TextBlock Text="Log Details:" FontSize="16" FontWeight="Bold" Margin="0,20,0,10" Foreground="Black"/>
 
-            <!-- Expand/Collapse Toggle Button -->
+            <!-- Expand/Collapse Toggle Button with Show/Hide Text -->
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                <ToggleButton x:Name="ExpandCollapseButton" Content="▼" 
-                      IsChecked="{Binding IsLogExpanded}" 
-                      FontSize="16" FontWeight="Bold" Foreground="Black" Margin="0,0,10,0">
+                <ToggleButton x:Name="ExpandCollapseButton" 
+                              IsChecked="{Binding IsLogExpanded}" 
+                              FontSize="14" FontWeight="Bold" 
+                              Foreground="Black" 
+                              Background="Transparent" 
+                              BorderThickness="0" 
+                              Margin="0,0,10,0">
                     <ToggleButton.Style>
                         <Style TargetType="ToggleButton">
-                            <Setter Property="Content" Value="▼" />
+                            <Setter Property="Content" Value="▼ Show Logs" />
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsLogExpanded}" Value="True">
-                                    <Setter Property="Content" Value="▲" />
+                                    <Setter Property="Content" Value="▲ Hide Logs" />
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -143,7 +147,6 @@
                 </StackPanel>
             </ScrollViewer>
         </StackPanel>
-
 
         <!-- Buttons for Upload and Update in a separate row for more space from log details -->
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="3" Margin="10,20,10,10">
