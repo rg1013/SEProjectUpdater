@@ -22,7 +22,7 @@ namespace ViewModels;
 /// </summary>
 public class ToolListViewModel : INotifyPropertyChanged
 {
-    public ObservableCollection<Tool> AvailableToolsList { get; set; }
+    public ObservableCollection<Tool>? AvailableToolsList { get; set; }
 
     /// <summary>
     /// Loads available analyzers from the specified folder using the DllLoader.
@@ -40,26 +40,47 @@ public class ToolListViewModel : INotifyPropertyChanged
         if (hashMap.Count > 0)
         {
             int rowCount = hashMap.Values.First().Count;
-            AvailableToolsList = new ObservableCollection<Tool>();
+            AvailableToolsList = [];
 
             for (int i = 0; i < rowCount; i++)
             {
                 var newTool = new Tool {
                     ID = hashMap["Id"][i],
+                    Name = hashMap["Name"][i],
                     Version = hashMap["Version"][i],
                     Description = hashMap["Description"][i],
                     Deprecated = hashMap["IsDeprecated"][i],
-                    CreatedBy = hashMap["CreatorName"][i]
+                    CreatedBy = hashMap["CreatorName"][i],
+                    CreatorEmail = hashMap["CreatorEmail"][i],
+                    LastModified = hashMap["LastModified"][i],
+                    LastUpdated = hashMap["LastUpdated"][i]
                 };
 
-                // Check if the tool is already in the list
-                bool isDuplicate = AvailableToolsList.Any(tool =>
-                    tool.ID == newTool.ID && tool.Version == newTool.Version);
+                Tool? existingTool = AvailableToolsList.FirstOrDefault(tool =>
+                tool.Name == newTool.Name &&
+                tool.CreatedBy == newTool.CreatedBy &&
+                tool.CreatorEmail == newTool.CreatorEmail);
 
-                // Add the tool only if it's not a duplicate
-                if (!isDuplicate)
+                if (existingTool != null)
                 {
+                    // Compare versions
+                    if (Version.Parse(newTool.Version) > Version.Parse(existingTool.Version))
+                    {
+                        // Remove the older version from the list
+                        AvailableToolsList.Remove(existingTool);
+                        AvailableToolsList.Add(newTool);
+                        Trace.WriteLine($"[Updater] Replaced older version with new version for tool: {newTool.Name}");
+                    }
+                    else
+                    {
+                        Trace.WriteLine($"[Updater] Skipped adding an older version of tool: {newTool.Name}");
+                    }
+                }
+                else
+                {
+                    // No existing tool with the same unique key; add new tool
                     AvailableToolsList.Add(newTool);
+                    Trace.WriteLine($"[Updater] Added new tool: {newTool.Name}");
                 }
             }
             Trace.WriteLine("Available Tools information updated successfully");
@@ -77,16 +98,16 @@ public class ToolListViewModel : INotifyPropertyChanged
     /// </summary>
     public ObservableCollection<Tool> ToolInfo
     {
-        get => AvailableToolsList;
+        get => AvailableToolsList ?? [];
         set {
             AvailableToolsList = value;
             OnPropertyChanged(nameof(ToolInfo));
         }
     }
 
-    public event PropertyChangedEventHandler PropertyChanged;
+    public event PropertyChangedEventHandler? PropertyChanged;
 
-    protected void OnPropertyChanged(string propertyName)
+    protected void OnPropertyChanged(string? propertyName)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }

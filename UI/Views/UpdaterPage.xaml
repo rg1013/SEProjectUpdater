@@ -100,14 +100,14 @@
                 <ListView x:Name="ToolViewList" ItemsSource="{Binding AvailableToolsList}" Margin="0,0,0,0" BorderThickness="2" BorderBrush="Black" Height="120">
                     <ListView.View>
                         <GridView>
-                            <GridViewColumn Header="ID" DisplayMemberBinding="{Binding ID}" Width="50" />
+                            <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="100" />
                             <GridViewColumn Header="Version" DisplayMemberBinding="{Binding Version}" Width="60" />
-                            <GridViewColumn Header="Description" DisplayMemberBinding="{Binding Description}" Width="280" />
+                            <GridViewColumn Header="Description" DisplayMemberBinding="{Binding Description}" Width="200" />
                             <GridViewColumn Header="Deprecated" DisplayMemberBinding="{Binding Deprecated}" Width="80" />
-                            <GridViewColumn Header="Created By" DisplayMemberBinding="{Binding CreatedBy}" Width="200" />
-                            <GridViewColumn Header="Last Updated" Width="100" />
-                            <GridViewColumn Header="Last Modified" Width="100" />
-                            <GridViewColumn Header="Creator Email" Width="150" />
+                            <GridViewColumn Header="Created By" DisplayMemberBinding="{Binding CreatedBy}" Width="150" />
+                            <GridViewColumn Header="Last Updated" DisplayMemberBinding="{Binding LastUpdated}" Width="150" />
+                            <GridViewColumn Header="Last Modified" DisplayMemberBinding="{Binding LastModified}" Width="150" />
+                            <GridViewColumn Header="Creator Email" DisplayMemberBinding="{Binding CreatorEmail}" Width="180"/>
                         </GridView>
                     </ListView.View>
                 </ListView>
@@ -122,8 +122,8 @@
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                 <ToggleButton x:Name="ExpandCollapseButton" 
                               IsChecked="{Binding IsLogExpanded}" 
-                              FontSize="14" FontWeight="Bold" 
-                              Foreground="Black" 
+                              FontSize="13" FontWeight="Bold" 
+                              Foreground="#1C1C1C" 
                               Background="Transparent" 
                               BorderThickness="0" 
                               Margin="0,0,10,0">
@@ -150,8 +150,8 @@
 
         <!-- Buttons for Upload and Update in a separate row for more space from log details -->
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="3" Margin="10,20,10,10">
-            <Button Content="Upload Analyzers" Width="150" Height="35"/>
-            <Button Content="Check for Updates" Width="150" Height="35"/>
+            <Button Content="Upload Tool" Width="170" Height="35"/>
+            <Button Content="Check for Updates on Cloud" Width="170" Height="35"/>
         </StackPanel>
 
         <!-- Notification Popup -->

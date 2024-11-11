@@ -11,6 +11,7 @@
 *****************************************************************************/
 
 using System.Reflection;
+using System.Runtime.Loader;
 using System.Runtime.Versioning;
 using System.Diagnostics;
 
@@ -56,24 +57,23 @@ public class ToolAssemblyLoader : IToolAssemblyLoader
                 // only processing dll files
                 if (File.Exists(file) && IsDLLFile(file))
                 {
-                    Assembly fileAssembly = Assembly.LoadFile(file);
+                    // Use a custom AssemblyLoadContext to load and unload the assembly
+                    var loadContext = new AssemblyLoadContext("ToolAssemblyLoaderContext", true);
+                    Assembly assembly = loadContext.LoadFromAssemblyPath(file);
+                    Trace.WriteLine($"[Updater] File Assembly: {assembly}");
 
-                    TargetFrameworkAttribute? targetFrameworkAttribute = fileAssembly.GetCustomAttribute<TargetFrameworkAttribute>();
+                    TargetFrameworkAttribute? targetFrameworkAttribute = assembly.GetCustomAttribute<TargetFrameworkAttribute>();
 
                     // the tools are limited to .NET version 8.0
                     if (targetFrameworkAttribute != null && targetFrameworkAttribute.FrameworkName == ".NETCoreApp,Version=v8.0")
                     {
                         try
                         {
-                            Assembly assembly = Assembly.LoadFrom(file);
-                            Trace.WriteLine($"[Updater] Assembly: {assembly.FullName}");
-
                             Type toolInterface = typeof(ITool);
                             Type[] types = assembly.GetTypes();
 
                             foreach (Type type in types)
                             {
-
                                 // only classes implementing ITool should be fetched
                                 if (toolInterface.IsAssignableFrom(type) && !type.IsInterface && !type.IsAbstract)
                                 {
@@ -93,19 +93,23 @@ public class ToolAssemblyLoader : IToolAssemblyLoader
                                                 if (property.CanRead)  // To ensure the property is readable
                                                 {
                                                     object? value = property.GetValue(instance);
-
-                                                    if (toolPropertyMap.ContainsKey($"{property.Name}"))
+                                                    string valueAsString = value switch {
+                                                        Version version => version.ToString(),
+                                                        DateTime dateTime => dateTime.ToString("yyyy-MM-dd"),
+                                                        _ => value?.ToString() ?? "null"
+                                                    };
+                                                    // Add other properties to the map (not version related)
+                                                    if (toolPropertyMap.ContainsKey(property.Name))
                                                     {
-                                                        toolPropertyMap[$"{property.Name}"].Add($"{value}");    // appending to the map values if key exists
+                                                        toolPropertyMap[property.Name].Add(valueAsString); // appending to the map values if key exists
                                                     }
                                                     else
                                                     {
-                                                        toolPropertyMap[$"{property.Name}"] = new List<string> { $"{value}" };  // creating a new list for values for new key
+                                                        toolPropertyMap[property.Name] = [valueAsString]; // creating a new list for values for new key
                                                     }
                                                 }
                                             }
                                         }
-
                                         else
                                         {
                                             throw new InvalidOperationException($"[Updater] Failed to create instance for {type.FullName}. Constructor might be missing or inaccessible.");
@@ -125,8 +129,11 @@ public class ToolAssemblyLoader : IToolAssemblyLoader
                     }
                     else
                     {
-                        Trace.WriteLine($"[Updater] Invalid Target Framework for Assembly {fileAssembly.GetName()}.");
+                        Trace.WriteLine($"[Updater] Invalid Target Framework for Assembly {assembly.GetName()}.");
                     }
+
+                    // Unload the assembly by unloading the AssemblyLoadContext
+                    loadContext.Unload();
                 }
             }
         }
@@ -134,6 +141,7 @@ public class ToolAssemblyLoader : IToolAssemblyLoader
         {
             throw new Exception($"[Updater] Unexpected error: {ex.Message}", ex);
         }
+
         return toolPropertyMap;
     }
 }

@@ -114,8 +114,6 @@ public class Client : INotificationHandler
             UpdateUILogs("Received SyncUp request from server");
             string serializedMetaData = Utils.SerializedMetadataPacket();
 
-            UpdateUILogs("Waiting in Client");
-
             // Sending data to server
             Trace.WriteLine("[Updater] Sending data as FileTransferHandler...");
             communicator.Send(serializedMetaData, "FileTransferHandler", null);
