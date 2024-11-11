@@ -11,7 +11,9 @@ Features incooperated:
 
 - UI/UX (view) complete development
 - The communication between server and multiple client is working
-- Only the latest version of a tool is displayed (To test add the 3 dlls given in the repo into the directory under monitor)
+- Client Syncs up with the server on joining, after successful file transfers the server broadcasts new files to all active clients
+- Only the latest version of a tool is displayed (To test add the 4 dlls given in the repo into the directory under monitor)
+- No repeated tools are displayed, even if duplicates are present in the directory
 - The user is notified of any change in the target directory
 - Proper logs for file transfer is maintained
 
