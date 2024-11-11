@@ -44,17 +44,27 @@ public class Client
     public void Subscribe()
     {
         _communicator.Subscribe("ClientMetadataHandler", new ClientMetadataHandler(_communicator));
-        SyncUp();
+        // SyncUp();
     }
 
+
+    /// <summary>
+    /// Sends a SyncUp request to the server
+    /// </summary>
     public void SyncUp()
     {
-        string serializedMetaData = Utils.SerializedMetadataPacket();
+        try
+        {
+            string serializedSyncUpPacket = Utils.SerializedSyncUpPacket();
 
-        // Sending data as ClientMetadataHandler
-        ReceiveData("Syncing Up with the server");
-        Trace.WriteLine("[Updater] Sending data as ClientMetadataHandler...");
-        _communicator.Send(serializedMetaData, "ClientMetadataHandler", null);
+            // ReceiveData("Sending syncup request to the server");
+            Trace.WriteLine("[Updater] Sending data as ClientMetadataHandler...");
+            _communicator.Send(serializedSyncUpPacket, "ClientMetadataHandler", null);
+        }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"[Updater] Error in SyncUp: {ex.Message}");
+        }
     }
 
     public void Stop()
@@ -82,11 +92,13 @@ public class Client
                 // Check PacketType
                 switch (dataPacket.DataPacketType)
                 {
+                    case DataPacket.PacketType.SyncUp:
+                        SyncUpHandler(dataPacket, communicator);
+                        break;
                     case DataPacket.PacketType.Metadata:
                         MetadataHandler(dataPacket, communicator);
                         break;
                     case DataPacket.PacketType.Broadcast:
-                        Console.WriteLine("Found broadcast files");
                         BroadcastHandler(dataPacket, communicator);
                         break;
                     case DataPacket.PacketType.ClientFiles:
@@ -105,6 +117,25 @@ public class Client
             }
         }
 
+        private static void SyncUpHandler(DataPacket dataPacket, ICommunicator communicator)
+        {
+            try
+            {
+                ReceiveData("Received SyncUp request from server");
+                string serializedMetaData = Utils.SerializedMetadataPacket();
+
+                // Sending data to server
+                Trace.WriteLine("[Updater] Sending data as ClientMetadataHandler...");
+                communicator.Send(serializedMetaData, "ClientMetadataHandler", null);
+
+                ReceiveData("Metadata sent to server");
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"Error in SyncUpHandler: {ex.Message}");
+            }
+        }
+
         private static void MetadataHandler(DataPacket dataPacket, ICommunicator communicator)
         {
             try
@@ -113,7 +144,7 @@ public class Client
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in MetadataHandler: {ex.Message}");
+                Trace.WriteLine($"Error in MetadataHandler: {ex.Message}");
             }
         }
 
@@ -144,7 +175,7 @@ public class Client
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Updater] Error in BroadcastHandler: {ex.Message}");
+                Trace.WriteLine($"[Updater] Error in BroadcastHandler: {ex.Message}");
             }
         }
 
@@ -156,7 +187,7 @@ public class Client
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in ClientFilesHandler: {ex.Message}");
+                Trace.WriteLine($"Error in ClientFilesHandler: {ex.Message}");
             }
         }
 
@@ -271,7 +302,7 @@ public class Client
         {
             try
             {
-                
+
                 Trace.WriteLine($"[Updater] ClientMetadataHandler received data");
                 ReceiveData($"ClientMetadataHandler received data");
                 PacketDemultiplexer(serializedData, _communicator);
@@ -286,6 +317,6 @@ public class Client
 
     public static void ReceiveData(string data)
     {
-        OnLogUpdate?.Invoke(data); 
+        OnLogUpdate?.Invoke(data);
     }
 }
