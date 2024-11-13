@@ -14,7 +14,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Updater;
 
-namespace ViewModels.Updater;
+namespace ViewModels;
 public class ServerViewModel : INotifyPropertyChanged
 {
     private Server _server;

@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Network\Network.csproj" />
-    <ProjectReference Include="..\ToolCreator\ToolCreator.csproj" />
   </ItemGroup>
 
 </Project>

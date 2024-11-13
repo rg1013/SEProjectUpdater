@@ -9,7 +9,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Updater\Updater.csproj" />
-    <ProjectReference Include="..\Whiteboard\Whiteboard.csproj" />
   </ItemGroup>
 
 </Project>

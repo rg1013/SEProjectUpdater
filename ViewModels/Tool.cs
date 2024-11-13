@@ -12,7 +12,7 @@
 
 using System.ComponentModel;
 
-namespace ViewModels.Updater;
+namespace ViewModels;
 public class Tool : INotifyPropertyChanged
 {
 

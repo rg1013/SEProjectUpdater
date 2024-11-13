@@ -3,7 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 namespace OtherExampleAnalyzer;
-using ToolCreator;
+using Updater;
 
 public class OtherExample : ITool
 {
