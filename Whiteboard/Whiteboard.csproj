@@ -8,7 +8,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Network\Network.csproj" />
-    <ProjectReference Include="..\ToolCreator\ToolCreator.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Adorners\" />
   </ItemGroup>
 
 </Project>

@@ -13,7 +13,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using Updater;
-using ViewModels;
+using ViewModels.Updater;
 
 namespace UI.Views
 {

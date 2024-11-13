@@ -10,7 +10,7 @@
 * Description = Interface defined for tool
 *****************************************************************************/
 
-namespace Updater;
+namespace ToolCreator;
 
 /// <summary>
 /// Represents the contract that any tool must implement

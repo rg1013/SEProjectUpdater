@@ -6,9 +6,4 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Network\Network.csproj" />
-    <ProjectReference Include="..\ToolCreator\ToolCreator.csproj" />
-  </ItemGroup>
-
 </Project>

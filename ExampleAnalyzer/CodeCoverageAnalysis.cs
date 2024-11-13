@@ -1,4 +1,4 @@
-﻿using Updater;
+﻿using ToolCreator;
 
 namespace ExampleAnalyzer;
 
