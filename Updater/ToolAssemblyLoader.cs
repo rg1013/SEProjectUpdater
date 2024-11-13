@@ -14,6 +14,7 @@ using System.Reflection;
 using System.Runtime.Loader;
 using System.Runtime.Versioning;
 using System.Diagnostics;
+using ToolInterface;
 
 namespace Updater;
 
