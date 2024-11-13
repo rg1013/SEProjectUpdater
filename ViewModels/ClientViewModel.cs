@@ -97,5 +97,25 @@ namespace ViewModels
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+
+        public async Task SyncUpAsync()
+        {
+            if (IsConnected)
+            {
+                StatusMessage = "Starting sync with the server...";
+                UpdateLog("Starting sync with the server...");
+
+                await Task.Run(() => _client.SyncUp()); // Call the SyncUp method on the client asynchronously
+
+                StatusMessage = "Sync completed.";
+                UpdateLog("Sync completed.");
+            }
+            else
+            {
+                StatusMessage = "Client is not connected. Sync cannot be started.";
+                UpdateLog("Client is not connected. Sync cannot be started.");
+            }
+        }
+
     }
 }

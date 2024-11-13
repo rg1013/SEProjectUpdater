@@ -139,5 +139,18 @@ namespace UI.Views
                 DisconnectButton.IsEnabled = false; // Disable Disconnect button
             }
         }
+        private async void SyncButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_clientViewModel.IsConnected)
+            {
+                LogServiceViewModel.UpdateLogDetails("Initiating sync with the server...\n");
+                await _clientViewModel.SyncUpAsync(); // Call the sync method on the ViewModel
+            }
+            else
+            {
+                LogServiceViewModel.UpdateLogDetails("Client is not connected. Please connect first.\n");
+            }
+        }
+
     }
 }
