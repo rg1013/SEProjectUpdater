@@ -21,6 +21,7 @@ public class DataPacket
     public enum PacketType
     {
         SyncUp,        // No files
+        InvalidSync,   // No files
         Metadata,      // single file
         Differences,   // multiple files
         ClientFiles,   // multiple files
