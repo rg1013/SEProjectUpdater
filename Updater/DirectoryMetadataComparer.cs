@@ -27,8 +27,8 @@ namespace Updater
         [XmlElement("UniqueClientFiles")]
 
         public List<string> UniqueClientFiles { get; private set; } = new List<string>();
+        public List<string> InvalidSyncUpFiles { get; private set; } = new List<string>();
 
-  
         // Parameterless constructor for XML serialization
         public DirectoryMetadataComparer() { }
 
@@ -124,6 +124,36 @@ namespace Updater
                     UniqueServerFiles.Add(fileA.FileName);
                 }
             }
+        }
+
+        /// <summary>
+        /// Checks for files in directory A and B that have the same name but different hashes.
+        /// </summary>
+        /// <param name="metadataA">Dir. A's metadata</param>
+        /// <param name="metadataB">Dir. B's metadata</param>
+        private void CheckForSameNameDifferentHash(List<FileMetadata> metadataA, List<FileMetadata> metadataB)
+        {
+            // Iterate over each file in directory A
+            foreach (FileMetadata fileA in metadataA)
+            {
+                // Find a file in directory B that has the same name as fileA
+                FileMetadata fileB = metadataB.FirstOrDefault(fb => fb.FileName == fileA.FileName);
+
+                if (fileB != null && fileA.FileHash != fileB.FileHash)
+                {
+                    // Found files with the same name but different hashes
+                    InvalidSyncUpFiles.Append(fileA.FileName);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Validates whether directories can be synced.
+        /// </summary>
+        public bool ValidateSync()
+        {
+            // If there are any filenames in InvalidSyncUpFiles, directories can't be synced. 
+            return InvalidSyncUpFiles.Any();
         }
     }
 
