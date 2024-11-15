@@ -119,6 +119,11 @@ public class ServerViewModel : INotifyPropertyChanged
         return jsonResult;
     }
 
+    /// <summary>
+    /// Notify property changed
+    /// </summary>
+    /// <param name="propertyName">Property name</param>
+
 
     public event PropertyChangedEventHandler? PropertyChanged;
 

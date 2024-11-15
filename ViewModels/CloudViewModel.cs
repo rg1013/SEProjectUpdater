@@ -121,7 +121,6 @@ public class CloudViewModel
         }
         string? serverData = ServerDataMethod();
 
-        Trace.WriteLine($"[HEREEEEEEEEEEEEE]:{serverData}");
 
         //analogy to set difference between cloud and server
         List<FileData> onlyCloudFiles = CloudHasMoreData(cloudData, serverData);
@@ -307,6 +306,21 @@ public class CloudViewModel
     {
         string destinationPath = SaveFileToServerMethod();
         File.WriteAllText(destinationPath, file);
+
+        string? content = Utils.ReadBinaryFile(destinationPath) ?? throw new Exception("Failed to read file");
+        string? serializedContent = Utils.SerializeObject(content) ?? throw new Exception("Failed to serialize content");
+        FileContent fileContentToSend = new FileContent("Cloud.json", serializedContent);
+
+        List<FileContent> fileContentsToSend = new List<FileContent>();
+        fileContentsToSend?.Add(fileContentToSend);
+
+        DataPacket dataPacketToSend = new DataPacket(
+                        DataPacket.PacketType.Broadcast,
+                        new List<FileContent> { fileContentToSend }
+                        );
+
+        // Serialize packet
+        string serializedPacket = Utils.SerializeObject(dataPacketToSend);
     }
 
     private static string SaveFileToServerMethod()

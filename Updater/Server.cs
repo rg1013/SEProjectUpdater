@@ -71,6 +71,31 @@ public class Server : INotificationHandler
         }
     }
 
+    private void Broadcasting(string serializedPacket)
+    {
+        _semaphore.Wait();
+
+        UpdateUILogs("Broadcasting the new files");
+        Trace.WriteLine("[Updater] Broadcasting the new files");
+        try
+        {
+            _communicator.Send(serializedPacket, "FileTransferHandler", null); // Broadcast to all clients
+        }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"[Updater] Error sending data to client: {ex.Message}");
+        }
+        // Wait for one second
+        System.Threading.Thread.Sleep(1000);
+        this.CompleteSync();
+    }
+
+    public void Broadcast(string serializedPacket)
+    {
+        Thread thread = new Thread(() => Broadcasting(serializedPacket));
+        thread.Start();
+    }
+
     /// <summary>
     /// Send SyncUp request to client
     /// </summary>
