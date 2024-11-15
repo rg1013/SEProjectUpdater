@@ -26,6 +26,7 @@ public class ServerViewModel : INotifyPropertyChanged
     private readonly Mutex _mutex;
     private readonly ToolAssemblyLoader _loader;
     private static readonly JsonSerializerOptions s_jsonOptions = new() { WriteIndented = true };
+    private bool _isRunning;
 
     public ServerViewModel(LogServiceViewModel logServiceViewModel, ToolAssemblyLoader loader)
     {
@@ -47,7 +48,10 @@ public class ServerViewModel : INotifyPropertyChanged
     {
         if (CanStartServer())
         {
-            Task.Run(() => _server.Start(ip, port));
+            Task.Run(() => {
+                _server.Start(ip, port);
+                _isRunning = true;
+            });
         }
         else
         {
@@ -59,6 +63,7 @@ public class ServerViewModel : INotifyPropertyChanged
     {
         _server.Stop();
         _mutex.ReleaseMutex();
+        _isRunning = false;
     }
 
     private void AddLogMessage(string message)
@@ -66,6 +71,10 @@ public class ServerViewModel : INotifyPropertyChanged
         _logServiceViewModel.UpdateLogDetails(message);
     }
 
+    public bool IsServerRunning()
+    {
+        return _isRunning;
+    }
     public string GetServerData()
     {
         string serverFolderPath = AppConstants.ToolsDirectory;
@@ -81,9 +90,8 @@ public class ServerViewModel : INotifyPropertyChanged
                 // Extract properties for each file if keys exist
                 Dictionary<string, List<string>> toolProperties1 = toolProperties;
 
-                
                 var fileData = new {
-                    ID = toolProperties1.ContainsKey("Id") ? toolProperties["Id"] : new List<string> { "N/A" },
+                    Id = toolProperties1.ContainsKey("Id") ? toolProperties["Id"] : new List<string> { "N/A" },
                     Name = toolProperties1.ContainsKey("Name") ? toolProperties["Name"] : new List<string> { "N/A" },
                     Description = toolProperties1.ContainsKey("Description") ? toolProperties["Description"] : new List<string> { "N/A" },
                     FileVersion = toolProperties1.ContainsKey("Version") ? toolProperties["Version"] : new List<string> { "N/A" },

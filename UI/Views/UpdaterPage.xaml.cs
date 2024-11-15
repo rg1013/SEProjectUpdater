@@ -17,6 +17,7 @@ using ViewModels;
 
 namespace UI.Views;
 
+
 /// <summary> 
 /// Interaction logic for UpdaterPage.xaml 
 /// </summary> 
@@ -147,14 +148,16 @@ public partial class UpdaterPage : Page
         // Disable the Sync button to prevent multiple syncs at the same time
         CloudSyncButton.IsEnabled = false;
 
-        string ip = AppConstants.ServerIP;
-        string port = AppConstants.Port;
-
         try
         {
-            // Start the server
-            _serverViewModel.StartServer(ip, port);
-            LogServiceViewModel.UpdateLogDetails("Server started for cloud sync.");
+            // Check if the server is running
+            if (!_serverViewModel.IsServerRunning())
+            {
+                LogServiceViewModel.UpdateLogDetails("Cloud sync aborted. Please start the server first.");
+                return;
+            }
+
+            LogServiceViewModel.UpdateLogDetails("Server is running. Starting cloud sync.");
 
             // Perform cloud sync asynchronously
             await _cloudViewModel.PerformCloudSync();
@@ -167,10 +170,6 @@ public partial class UpdaterPage : Page
         }
         finally
         {
-            // Ensure the server is stopped and button is re-enabled
-            _serverViewModel.StopServer();
-            LogServiceViewModel.UpdateLogDetails("Server stopped after cloud sync.");
-
             CloudSyncButton.IsEnabled = true; // Re-enable Sync button
         }
     }

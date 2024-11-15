@@ -13,6 +13,7 @@ using System.Text;
 using static ViewModels.CloudViewModel;
 using System.Reflection.Metadata;
 using SECloud.Models;
+using System.Diagnostics;
 namespace ViewModels;
 
 public class CloudViewModel
@@ -76,7 +77,7 @@ public class CloudViewModel
 
     public class FileData
     {
-        public List<string>? ID { get; set; }
+        public List<string>? Id { get; set; }
         public List<string>? Name { get; set; }
         public List<string>? Description { get; set; }
         public List<string>? FileVersion { get; set; }
@@ -160,35 +161,65 @@ public class CloudViewModel
         return await _cloudService.DownloadAsync("ServerFiles.json");
     }
 
-    public static List<FileData> ServerHasMoreData(string cloudData, string serverData)
+    public static List<FileData> RemoveNAEntries(List<FileData> files)
     {
-        List<FileData>? cloudFiles = JsonSerializer.Deserialize<List<FileData>>(cloudData);
-        List<FileData>? serverFiles = JsonSerializer.Deserialize<List<FileData>>(serverData);
-
-        List<FileData>? serverFiles1 = serverFiles;
-        return serverFiles1
-            .Where(serverFile => !cloudFiles.Any(cloudFile => (serverFile.Name[0] != "N/A" && cloudFile.Name == serverFile.Name && cloudFile.FileVersion == serverFile.FileVersion)))
+        // Remove any entries where Name or Id or any other critical field contains "N/A" or is null.
+        return files
+            .Where(file => !file.Name.Contains("N/A") && file.Id != null && file.Id.All(id => id != "N/A"))
             .ToList();
     }
 
-    /// <summary>
-    /// Identifies files that are present in the cloud but not on the server. If any Name in a cloud FileData object is found in the server,
-    /// it removes the corresponding entry at the same index across all fields to maintain consistency.
-    /// </summary>
-    /// <param name="cloudData">The JSON data from the cloud.</param>
-    /// <param name="serverData">The JSON data from the server.</param>
-    /// <returns>A list of FileData objects that have entries removed at specific indices, ensuring unique data on the server.</returns>
+    public static List<FileData> ServerHasMoreData(string cloudData, string serverData)
+    {
+        // Deserialize the JSON strings into lists of FileData objects
+        List<FileData>? cloudFiles = JsonSerializer.Deserialize<List<FileData>>(cloudData);
+        List<FileData>? serverFiles = JsonSerializer.Deserialize<List<FileData>>(serverData);
+
+        // Remove entries with "N/A" values from both cloud and server files
+        cloudFiles = RemoveNAEntries(cloudFiles ?? new List<FileData>());
+        serverFiles = RemoveNAEntries(serverFiles ?? new List<FileData>());
+
+        // Initialize a new list to hold files that need to be added to the cloud
+        List<FileData> newList = new List<FileData>();
+
+        // Iterate over each file in the server list
+        foreach (FileData serverFile in serverFiles)
+        {
+            // Check if the server has files not in the cloud (including DLL files)
+            foreach (var serverFileName in serverFile.Name)
+            {
+                // Check if this file already exists in the cloud (by comparing Id)
+                if (!cloudFiles.Any(cloudFile => cloudFile.Id?.Contains(serverFile.Id?.FirstOrDefault()) == true))
+                {
+                    // The server has a file that is not in the cloud, so add it to the cloud
+                    newList.Add(serverFile);
+                    break;  // Exit the loop once we add the file to prevent duplicate additions
+                }
+            }
+        }
+
+        // Add the new files to the cloud files list
+        cloudFiles.AddRange(newList);
+
+        // Return the updated list of cloud files (which now includes the new files from the server)
+        return cloudFiles;
+    }
+
     public static List<FileData> CloudHasMoreData(string cloudData, string serverData)
     {
         // Deserialize cloud and server data into lists of FileData objects
         List<FileData>? cloudFiles = JsonSerializer.Deserialize<List<FileData>>(cloudData);
         List<FileData>? serverFiles = JsonSerializer.Deserialize<List<FileData>>(serverData);
 
-        // Ensure lists are not null
+        // Remove entries with "N/A" values from both cloud and server files
+        cloudFiles = RemoveNAEntries(cloudFiles ?? new List<FileData>());
+        serverFiles = RemoveNAEntries(serverFiles ?? new List<FileData>());
+
+        // Ensure both lists are not null
         cloudFiles ??= new List<FileData>();
         serverFiles ??= new List<FileData>();
 
-        foreach (var cloudFile in cloudFiles)
+        foreach (FileData cloudFile in cloudFiles)
         {
             // Find indices in cloudFile.Name that should be removed because they exist in serverFiles
             var indicesToRemove = cloudFile.Name
@@ -206,9 +237,9 @@ public class CloudViewModel
                     cloudFile.Name.RemoveAt(index);
                 }
 
-                if (cloudFile.ID?.Count > index)
+                if (cloudFile.Id?.Count > index)
                 {
-                    cloudFile.ID.RemoveAt(index);
+                    cloudFile.Id.RemoveAt(index);
                 }
 
                 if (cloudFile.Description?.Count > index)
@@ -236,6 +267,7 @@ public class CloudViewModel
         // Return only cloud files with remaining unique entries
         return cloudFiles.Where(file => file.Name.Any()).ToList();
     }
+
 
     private void UpdateServerWithCloudData(string file)
     {
