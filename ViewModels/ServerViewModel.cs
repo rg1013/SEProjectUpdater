@@ -39,6 +39,11 @@ public class ServerViewModel : INotifyPropertyChanged
         _mutex = new Mutex(false, "Global\\MyUniqueServerMutexName");
     }
 
+    public Server GetServer()
+    {
+        return _server;
+    }
+
     public bool CanStartServer()
     {
         return _mutex.WaitOne(0); // Check if the mutex can be acquired

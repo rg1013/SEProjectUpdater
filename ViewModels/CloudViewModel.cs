@@ -26,6 +26,7 @@ using static ViewModels.CloudViewModel;
 using System.Reflection.Metadata;
 using SECloud.Models;
 using System.Diagnostics;
+using Networking.Communication;
 namespace ViewModels;
 
 /// <summary>
@@ -306,6 +307,7 @@ public class CloudViewModel
     {
         string destinationPath = SaveFileToServerMethod();
         File.WriteAllText(destinationPath, file);
+        _logServiceViewModel.UpdateLogDetails("File successfully saved on server");
 
         string? content = Utils.ReadBinaryFile(destinationPath) ?? throw new Exception("Failed to read file");
         string? serializedContent = Utils.SerializeObject(content) ?? throw new Exception("Failed to serialize content");
@@ -321,6 +323,7 @@ public class CloudViewModel
 
         // Serialize packet
         string serializedPacket = Utils.SerializeObject(dataPacketToSend);
+        _serverViewModel.GetServer().Broadcast(serializedPacket);
     }
 
     private static string SaveFileToServerMethod()
