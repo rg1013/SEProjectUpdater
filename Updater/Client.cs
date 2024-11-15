@@ -44,7 +44,6 @@ public class Client : INotificationHandler
     public void Subscribe()
     {
         _communicator.Subscribe("FileTransferHandler", this);
-        // SyncUp();
     }
 
 
@@ -73,6 +72,17 @@ public class Client : INotificationHandler
         _communicator.Stop();
     }
 
+
+    public static void ShowInvalidFilesInUI(List<string> invalidFiles)
+    {
+        UpdateUILogs("Invalid filenames: Please change the name of the following files and manually sync up again");
+        foreach (string file in invalidFiles)
+        {
+            UpdateUILogs(file);
+        }
+        UpdateUILogs("Sync up failed");
+    }
+
     public static void PacketDemultiplexer(string serializedData, ICommunicator communicator)
     {
         try
@@ -84,6 +94,9 @@ public class Client : INotificationHandler
             {
                 case DataPacket.PacketType.SyncUp:
                     SyncUpHandler(dataPacket, communicator);
+                    break;
+                case DataPacket.PacketType.InvalidSync:
+                    InvalidSyncHandler(dataPacket, communicator);
                     break;
                 case DataPacket.PacketType.Metadata:
                     MetadataHandler(dataPacket, communicator);
@@ -123,6 +136,22 @@ public class Client : INotificationHandler
         catch (Exception ex)
         {
             Trace.WriteLine($"Error in SyncUpHandler: {ex.Message}");
+        }
+    }
+
+    private static void InvalidSyncHandler(DataPacket dataPacket, ICommunicator communicator)
+    {
+        try
+        {
+            FileContent fileContent = dataPacket.FileContentList[0];
+            string? serializedContent = fileContent.SerializedContent;
+            List<string> invalidFileNames = Utils.DeserializeObject<List<string>>(serializedContent);
+            UpdateUILogs("Received invalid file names from server");
+            ShowInvalidFilesInUI(invalidFileNames);
+        }
+        catch (Exception ex)
+        {
+            Trace.WriteLine($"Error in InvalidSyncHandler: {ex.Message}");
         }
     }
 
