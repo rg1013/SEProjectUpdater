@@ -84,6 +84,22 @@ public class ClientViewModel : INotifyPropertyChanged
         }
     }
 
+
+        public async Task SyncUpAsync()
+        {
+            if (IsConnected)
+            {
+                await Task.Run(() => _client.SyncUp()); // Call the SyncUp method on the client asynchronously
+
+                StatusMessage = "Sync completed.";
+                UpdateLog("Sync completed.");
+            }
+            else
+            {
+                StatusMessage = "Client is not connected. Sync cannot be started.";
+                UpdateLog("Client is not connected. Sync cannot be started.");
+            }
+        }
     public void Disconnect()
     {
         _client.Stop();
