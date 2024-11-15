@@ -59,6 +59,7 @@ namespace Updater
 
             CheckForRenamesAndMissingFiles(metadataB, hashToFileA);
             CheckForOnlyInAFiles(metadataA, hashToFileB);
+            CheckForSameNameDifferentHash(metadataA, metadataB);
         }
 
         /// <summary>

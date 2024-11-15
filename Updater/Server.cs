@@ -290,8 +290,8 @@ public class Server : INotificationHandler
 
                 try
                 {
-                    Server.UpdateUILogs($"Sending files to client and waiting to recieve files from client {clientId}");
-                    communicator.Send(serializedDataPacket, "Server", clientId);
+                    UpdateUILogs($"Sending files to client and waiting to recieve files from client {clientId}");
+                    communicator.Send(serializedDataPacket, "FileTransferHandler", clientId);
 
                     // End the sync up
                     server.CompleteSync();
@@ -319,7 +319,7 @@ public class Server : INotificationHandler
                 {
                     Directory.CreateDirectory(Path.GetDirectoryName(tempFilePath)!);
                     File.WriteAllText(tempFilePath, serializedDifferences);
-                    Server.UpdateUILogs($"Differences file saved to {tempFilePath}");
+                    UpdateUILogs($"Differences file saved to {tempFilePath}");
                     Trace.WriteLine($"[Updater] Differences file saved to {tempFilePath}");
                 }
                 catch (Exception ex)
@@ -369,7 +369,7 @@ public class Server : INotificationHandler
 
                 try
                 {
-                    Server.UpdateUILogs($"Sending files to client and waiting to recieve files from client {clientId}");
+                    UpdateUILogs($"Sending files to client and waiting to recieve files from client {clientId}");
                     communicator.Send(serializedDataPacket, "FileTransferHandler", clientId);
                 }
                 catch (Exception ex)
@@ -395,7 +395,7 @@ public class Server : INotificationHandler
     {
         try
         {
-            Server.UpdateUILogs("Recieved files from client");
+            UpdateUILogs("Recieved files from client");
             // File list
             List<FileContent> fileContentList = dataPacket.FileContentList;
 
@@ -415,7 +415,7 @@ public class Server : INotificationHandler
                 }
             }
 
-            Server.UpdateUILogs("Successfully received client's files");
+            UpdateUILogs("Successfully received client's files");
             Trace.WriteLine("[Updater] Successfully received client's files");
 
             // Broadcast client's new files to all clients
@@ -424,7 +424,7 @@ public class Server : INotificationHandler
             // Serialize packet
             string serializedPacket = Utils.SerializeObject(dataPacket);
 
-            Server.UpdateUILogs("Broadcasting the new files");
+            UpdateUILogs("Broadcasting the new files");
             Trace.WriteLine("[Updater] Broadcasting the new files");
             try
             {
@@ -479,7 +479,7 @@ public class Server : INotificationHandler
             string clientId = $"Client{Interlocked.Increment(ref s_clientCounter)}"; // Use Interlocked for thread safety
 
             Trace.WriteLine($"[Updater] FileTransferHandler detected new client connection: {socket.Client.RemoteEndPoint}, assigned ID: {clientId}");
-            Server.UpdateUILogs($"Detected new client connection: {socket.Client.RemoteEndPoint}, assigned ID: {clientId}");
+            UpdateUILogs($"Detected new client connection: {socket.Client.RemoteEndPoint}, assigned ID: {clientId}");
 
             _clientConnections.Add(clientId, socket); // Add client connection to the dictionary
             _communicator?.AddClient(clientId, socket); // Use the unique client ID
@@ -500,7 +500,7 @@ public class Server : INotificationHandler
         {
             if (_clientConnections.Remove(clientId))
             {
-                Server.UpdateUILogs($"Detected client {clientId} disconnected");
+                UpdateUILogs($"Detected client {clientId} disconnected");
                 Trace.WriteLine($"[Updater] FileTransferHandler detected client {clientId} disconnected");
             }
             else
