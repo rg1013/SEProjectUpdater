@@ -126,6 +126,7 @@ public partial class UpdaterPage : Page
                 ConnectButton.IsEnabled = true;
             }
         }
+    }
         private async void SyncButtonClick(object sender, RoutedEventArgs e)
         {
             if (_clientViewModel.IsConnected)
@@ -138,8 +139,6 @@ public partial class UpdaterPage : Page
                 LogServiceViewModel.UpdateLogDetails("Client is not connected. Please connect first.\n");
             }
         }
-
-    }
 
     private void DisconnectButton_Click(object sender, RoutedEventArgs e) // Handler for disconnect button click 
     {
