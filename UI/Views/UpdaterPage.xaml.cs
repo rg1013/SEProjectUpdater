@@ -127,18 +127,18 @@ public partial class UpdaterPage : Page
             }
         }
     }
-        private async void SyncButtonClick(object sender, RoutedEventArgs e)
+    private async void SyncButtonClick(object sender, RoutedEventArgs e)
+    {
+        if (_clientViewModel.IsConnected)
         {
-            if (_clientViewModel.IsConnected)
-            {
-                LogServiceViewModel.UpdateLogDetails("Initiating sync with the server...\n");
-                await _clientViewModel.SyncUpAsync(); // Call the sync method on the ViewModel
-            }
-            else
-            {
-                LogServiceViewModel.UpdateLogDetails("Client is not connected. Please connect first.\n");
-            }
+            LogServiceViewModel.UpdateLogDetails("Initiating sync with the server...\n");
+            await _clientViewModel.SyncUpAsync(); // Call the sync method on the ViewModel
         }
+        else
+        {
+            LogServiceViewModel.UpdateLogDetails("Client is not connected. Please connect first.\n");
+        }
+    }
 
     private void DisconnectButton_Click(object sender, RoutedEventArgs e) // Handler for disconnect button click 
     {
@@ -155,7 +155,7 @@ public partial class UpdaterPage : Page
         }
     }
 
-    private async void SyncCloudButton_Click(object sender, RoutedEventArgs e)
+    private async void SyncCloudButtonClick(object sender, RoutedEventArgs e)
     {
         // Disable the Sync button to prevent multiple syncs at the same time
         CloudSyncButton.IsEnabled = false;
