@@ -95,11 +95,12 @@ public class ServerViewModel : INotifyPropertyChanged
                     Name = toolProperties1.ContainsKey("Name") ? toolProperties["Name"] : new List<string> { "N/A" },
                     Description = toolProperties1.ContainsKey("Description") ? toolProperties["Description"] : new List<string> { "N/A" },
                     FileVersion = toolProperties1.ContainsKey("Version") ? toolProperties["Version"] : new List<string> { "N/A" },
-                    LastUpdate = toolProperties1.ContainsKey("LastUpdate") ? toolProperties["LastUpdate"] : new List<string> { "N/A" },
+                    LastUpdate = toolProperties1.ContainsKey("LastUpdated") ? toolProperties["LastUpdated"] : new List<string> { "N/A" },
                     LastModified = toolProperties1.ContainsKey("LastModified") ? toolProperties["LastModified"] : new List<string> { "N/A" },
                     CreatorName = toolProperties1.ContainsKey("CreatorName") ? toolProperties["CreatorName"] : new List<string> { "N/A" },
-                    CreatorMail = toolProperties1.ContainsKey("CreatorMail") ? toolProperties["CreatorMail"] : new List<string> { "N/A" }
+                    CreatorMail = toolProperties1.ContainsKey("CreatorEmail") ? toolProperties["CreatorEmail"] : new List<string> { "N/A" }
                 };
+
 
                 fileDataList.Add(fileData);
             }
