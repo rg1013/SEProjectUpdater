@@ -14,6 +14,9 @@ using System.Windows;
 using System.Windows.Controls;
 using Updater;
 using ViewModels;
+using Newtonsoft.Json.Linq;
+using System.IO;
+using Newtonsoft.Json;
 
 namespace UI.Views;
 
@@ -173,5 +176,66 @@ public partial class UpdaterPage : Page
             CloudSyncButton.IsEnabled = true; // Re-enable Sync button
         }
     }
+    private void OnShowMessageClick(object sender, RoutedEventArgs e)
+    {
+        string jsonFilePath = Path.Combine(AppConstants.ToolsDirectory,"CloudFiles.json");  // Provide the correct path to your JSON file
+
+        // Check if the file exists
+        if (File.Exists(jsonFilePath))
+        {
+            try
+            {
+                // Read the content of the JSON file
+                string jsonContent = File.ReadAllText(jsonFilePath);
+
+                // Parse the JSON content as an array
+                JArray parsedJson = JArray.Parse(jsonContent);
+
+                // Initialize a string to hold the formatted display content
+                string displayContent = "";
+
+                // Check if the parsed JSON is empty
+                if (parsedJson.Count == 0)
+                {
+                    displayContent = "No data available in the cloud file.";
+                }
+                else
+                {
+                    // Loop through the array and extract relevant fields
+                    foreach (JObject item in parsedJson)
+                    {
+                        // Extract specific fields and append them to the display content string
+                        displayContent += "ID: " + item["Id"]?.FirstOrDefault()?.ToString() + Environment.NewLine;
+                        displayContent += "Name: " + item["Name"]?.FirstOrDefault()?.ToString() + Environment.NewLine;
+                        displayContent += "FileVersion: " + item["FileVersion"]?.FirstOrDefault()?.ToString() + Environment.NewLine;
+                        displayContent += "Description: " + item["Description"]?.FirstOrDefault()?.ToString() + Environment.NewLine;
+                        displayContent += "LastModified: " + item["LastModified"]?.FirstOrDefault()?.ToString() + Environment.NewLine;
+
+                        // Add a separator between items
+                        displayContent += new string('-', 30) + Environment.NewLine;
+                    }
+                }
+
+                // Display the formatted content in the MessageBox
+                MessageBox.Show(displayContent, "JSON File Contents", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (JsonReaderException ex)
+            {
+                // Handle JSON parsing errors
+                MessageBox.Show($"Error reading JSON file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            catch (Exception ex)
+            {
+                // Handle other types of errors (e.g., file reading errors)
+                MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        else
+        {
+            // Show a message when the file is not present
+            MessageBox.Show("No messages from the cloud. The file does not exist.", "Cloud Message", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+
 
 }

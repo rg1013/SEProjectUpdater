@@ -121,7 +121,7 @@ public class CloudViewModel
         }
         string? serverData = ServerDataMethod();
 
-        Trace.WriteLine($"[HEREEEEEEEEEEEEE]:{serverData}");
+
 
         //analogy to set difference between cloud and server
         List<FileData> onlyCloudFiles = CloudHasMoreData(cloudData, serverData);
@@ -137,6 +137,7 @@ public class CloudViewModel
         if (onlyCloudFiles.Count != 0)
         {
             _logServiceViewModel.UpdateLogDetails("Cloud has more Data than server. Sending JSON file to server....");
+            _logServiceViewModel.ShowNotification("Please! Check the message box for cloud details.");
             UpdateServerWithCloudData(jsonCloudFiles);
 
             //BroadCastNewFiles(onlyCloudFiles);
