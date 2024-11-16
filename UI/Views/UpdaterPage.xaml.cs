@@ -10,13 +10,15 @@
  * Description = Initialize a page for Updater 
  *****************************************************************************/
 
+using Microsoft.Win32;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using Updater;
 using ViewModels;
 
 namespace UI.Views;
-
 
 /// <summary> 
 /// Interaction logic for UpdaterPage.xaml 
@@ -24,12 +26,13 @@ namespace UI.Views;
 public partial class UpdaterPage : Page
 {
     public LogServiceViewModel LogServiceViewModel { get; }
-    private readonly FileChangeNotifier _analyzerNotificationService;
-    private readonly ToolListViewModel _toolListViewModel;
+    private FileChangeNotifier _analyzerNotificationService;
+    private ToolListViewModel _toolListViewModel;
     private readonly CloudViewModel _cloudViewModel;
-    private readonly ServerViewModel _serverViewModel; // Added server view model 
-    private readonly ClientViewModel _clientViewModel; // Added client view model 
+    private ServerViewModel _serverViewModel; // Added server view model 
+    private ClientViewModel _clientViewModel; // Added client view model 
     private readonly ToolAssemblyLoader _loader;
+
     public UpdaterPage()
     {
         InitializeComponent();
@@ -37,6 +40,10 @@ public partial class UpdaterPage : Page
         _toolListViewModel.LoadAvailableTools();
         ListView listView = (ListView)this.FindName("ToolViewList");
         listView.DataContext = _toolListViewModel;
+
+        // Initialize the main ViewModel and set initial state for IsEnabled
+        LogServiceViewModel = new LogServiceViewModel { IsEnabled = false }; // Show only Sync with Server initially
+        DataContext = LogServiceViewModel;
 
         _analyzerNotificationService = new FileChangeNotifier();
         _analyzerNotificationService.MessageReceived += OnMessageReceived;
@@ -47,6 +54,12 @@ public partial class UpdaterPage : Page
         _serverViewModel = new ServerViewModel(LogServiceViewModel, _loader); // Initialize the server view model 
         _cloudViewModel = new CloudViewModel(LogServiceViewModel, _serverViewModel);
         _clientViewModel = new ClientViewModel(LogServiceViewModel); // Initialize the client view model 
+    }
+
+    private void ToggleButton_Click(object sender, RoutedEventArgs e)
+    {
+        // Toggle the IsEnabled property to show or hide the second button
+        LogServiceViewModel.IsEnabled = !LogServiceViewModel.IsEnabled;
     }
 
     private void OnMessageReceived(string message)
@@ -126,19 +139,6 @@ public partial class UpdaterPage : Page
                 ConnectButton.IsEnabled = true;
             }
         }
-        private async void SyncButtonClick(object sender, RoutedEventArgs e)
-        {
-            if (_clientViewModel.IsConnected)
-            {
-                LogServiceViewModel.UpdateLogDetails("Initiating sync with the server...\n");
-                await _clientViewModel.SyncUpAsync(); // Call the sync method on the ViewModel
-            }
-            else
-            {
-                LogServiceViewModel.UpdateLogDetails("Client is not connected. Please connect first.\n");
-            }
-        }
-
     }
 
     private void DisconnectButton_Click(object sender, RoutedEventArgs e) // Handler for disconnect button click 
@@ -156,34 +156,59 @@ public partial class UpdaterPage : Page
         }
     }
 
-    private async void SyncCloudButton_Click(object sender, RoutedEventArgs e)
+    private void UploadFilesClick(object sender, RoutedEventArgs e)
     {
-        // Disable the Sync button to prevent multiple syncs at the same time
-        CloudSyncButton.IsEnabled = false;
+        // Open File Dialog
+        OpenFileDialog openFileDialog = new OpenFileDialog {
+            Title = "Select a File to Upload",
+            Filter = "All Files (*.*)|*.*",
+            Multiselect = false // Allow selecting only one file
+        };
 
-        try
+        if (openFileDialog.ShowDialog() == true)
         {
-            // Check if the server is running
-            if (!_serverViewModel.IsServerRunning())
+            string selectedFile = openFileDialog.FileName; // Get the selected file path
+
+            // Set the target directory where files will be saved
+            string targetDirectory = @"C:\UploadedFiles";
+
+            // Ensure the directory exists
+            if (!Directory.Exists(targetDirectory))
             {
-                LogServiceViewModel.UpdateLogDetails("Cloud sync aborted. Please start the server first.");
-                return;
+                Directory.CreateDirectory(targetDirectory);
             }
 
-            LogServiceViewModel.UpdateLogDetails("Server is running. Starting cloud sync.");
+            // Create the target file path
+            string targetFilePath = Path.Combine(targetDirectory, Path.GetFileName(selectedFile));
 
-            // Perform cloud sync asynchronously
-            await _cloudViewModel.PerformCloudSync();
+            try
+            {
+                // Copy the file to the target directory
+                File.Copy(selectedFile, targetFilePath, overwrite: true);
 
-            LogServiceViewModel.UpdateLogDetails("Cloud sync completed.");
+                // Notify the user and log success
+                LogServiceViewModel.UpdateLogDetails($"File uploaded successfully: {Path.GetFileName(selectedFile)}");
+                MessageBox.Show("File uploaded successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                // Handle errors during file copy
+                LogServiceViewModel.UpdateLogDetails($"Failed to upload file: {ex.Message}");
+                MessageBox.Show($"Error uploading file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
-        catch (Exception ex)
+
+    }
+    private async void SyncButtonClick(object sender, RoutedEventArgs e)
+    {
+        if (_clientViewModel.IsConnected)
         {
-            LogServiceViewModel.UpdateLogDetails($"Error during cloud sync: {ex.Message}");
+            LogServiceViewModel.UpdateLogDetails("Initiating sync with the server...\n");
+            await _clientViewModel.SyncUpAsync(); // Call the sync method on the ViewModel
         }
-        finally
+        else
         {
-            CloudSyncButton.IsEnabled = true; // Re-enable Sync button
+            LogServiceViewModel.UpdateLogDetails("Client is not connected. Please connect first.\n");
         }
     }
 

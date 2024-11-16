@@ -32,6 +32,26 @@ public class LogServiceViewModel : INotifyPropertyChanged
     private string _toolsDirectoryMessage;  // Message for displaying the tools directory
     private bool _isLogExpanded = false;  // Tracks whether the log section is expanded or collapsed
     private DispatcherTimer _timer;  // Timer to auto-hide notifications after a set interval
+    private bool _isEnabled = false;  // Controls visibility of the "Check for Updates on Cloud" button
+
+    ///<summary>
+    /// Gets or sets whether the "Check for Updates on Cloud" button is enabled or visible.
+    /// When true, both buttons are shown; when false, only the "Sync with Server" button is shown.
+    ///</summary>
+    public bool IsEnabled
+    {
+        get => _isEnabled;
+        set {
+            OnPropertyChanged(nameof(IsEnabled));
+            OnPropertyChanged(nameof(UploadAndCloudSyncButtonsVisibility));
+            OnPropertyChanged(nameof(SyncUpButtonVisibility));
+        }
+    }
+
+    ///<summary>
+    /// Returns the visibility of the "Check for Updates on Cloud" button based on IsEnabled.
+    ///</summary>
+    public Visibility CheckForUpdatesButtonVisibility => IsEnabled ? Visibility.Visible : Visibility.Collapsed;
 
     ///<summary>
     /// Constructor for LogServiceViewModel.
@@ -54,9 +74,7 @@ public class LogServiceViewModel : INotifyPropertyChanged
     public string LogDetails
     {
         get => _logDetails;
-        set
-        {
-            // Update the log details and notify the UI of the change
+        set {
             _logDetails = value;
             OnPropertyChanged(nameof(LogDetails));
         }
@@ -68,9 +86,7 @@ public class LogServiceViewModel : INotifyPropertyChanged
     public string NotificationMessage
     {
         get => _notificationMessage;
-        set
-        {
-            // Update the notification message and notify the UI of the change
+        set {
             _notificationMessage = value;
             OnPropertyChanged(nameof(NotificationMessage));
         }
@@ -84,7 +100,6 @@ public class LogServiceViewModel : INotifyPropertyChanged
     {
         get => _notificationVisible;
         set {
-            // Update the notification visibility and notify the UI of the change
             _notificationVisible = value;
             OnPropertyChanged(nameof(NotificationVisible));
         }
@@ -104,12 +119,9 @@ public class LogServiceViewModel : INotifyPropertyChanged
     public bool IsLogExpanded
     {
         get => _isLogExpanded;
-        set
-        {
-            // Update the expanded/collapsed state of the log section and notify the UI of the change
+        set {
             _isLogExpanded = value;
             OnPropertyChanged(nameof(IsLogExpanded));
-            // Trigger a change in the visibility of the log details
             OnPropertyChanged(nameof(LogDetailsVisibility));
         }
     }
@@ -128,9 +140,7 @@ public class LogServiceViewModel : INotifyPropertyChanged
     ///<param name="message">The message to append to the log.</param>
     public void UpdateLogDetails(string message)
     {
-        // Get the current timestamp in HH:mm:ss dd-MM-yyyy format
         string timestamp = DateTime.Now.ToString("HH:mm:ss dd-MM-yyyy");
-        // Append the new message with the timestamp to the log details
         LogDetails = $"[{timestamp}] {message}\n" + LogDetails;
     }
 
@@ -141,41 +151,37 @@ public class LogServiceViewModel : INotifyPropertyChanged
     ///<param name="message">The message to display in the notification.</param>
     public void ShowNotification(string message)
     {
-        // Set the notification message and make the notification visible
         NotificationMessage = message;
         NotificationVisible = true;
-
-        // Start the timer to auto-hide the notification after 15 seconds
         _timer.Start();
     }
 
     ///<summary>
     /// Hides the notification popup and stops the auto-hide timer.
-    /// This method is called when the timer completes (after 15 seconds).
     ///</summary>
     private void HideNotification()
     {
-        // Hide the notification and stop the timer
         NotificationVisible = false;
         _timer.Stop();
     }
 
+    // Show "Upload Files" and "Cloud Sync" buttons when IsEnabled is true
+    public Visibility UploadAndCloudSyncButtonsVisibility => IsEnabled ? Visibility.Visible : Visibility.Collapsed;
+
+    // Show "Sync up" button when IsEnabled is false
+    public Visibility SyncUpButtonVisibility => !IsEnabled ? Visibility.Visible : Visibility.Collapsed;
+
     ///<summary>
     /// Occurs when a property value changes.
-    /// This is the standard INotifyPropertyChanged event that allows
-    /// the ViewModel to notify the UI of changes to properties.
     ///</summary>
     public event PropertyChangedEventHandler? PropertyChanged;
 
     ///<summary>
     /// Notifies listeners about property changes.
-    /// This method is used to raise the PropertyChanged event for any property
-    /// that has been modified.
     ///</summary>
     ///<param name="propertyName">The name of the property that changed.</param>
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
-        // Raise the PropertyChanged event to notify the UI of property changes
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName ?? string.Empty));
     }
 }
