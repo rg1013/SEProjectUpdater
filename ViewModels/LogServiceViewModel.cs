@@ -42,11 +42,13 @@ public class LogServiceViewModel : INotifyPropertyChanged
     {
         get => _isEnabled;
         set {
+            _isEnabled = value;
             OnPropertyChanged(nameof(IsEnabled));
             OnPropertyChanged(nameof(UploadAndCloudSyncButtonsVisibility));
             OnPropertyChanged(nameof(SyncUpButtonVisibility));
         }
     }
+
 
     ///<summary>
     /// Returns the visibility of the "Check for Updates on Cloud" button based on IsEnabled.
