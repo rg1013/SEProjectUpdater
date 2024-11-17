@@ -7,7 +7,7 @@
 * 
 * Project     = Lab Monitoring Software
 *
-* Description = 
+* Description = Class to generate metadata of server/client directory
 *****************************************************************************/
 
 using System.Security.Cryptography;
@@ -24,12 +24,12 @@ public class DirectoryMetadataGenerator
     /// Create metadata of directory
     /// </summary>
     /// <param name="directoryPath">Path of the directory</param>
-    public DirectoryMetadataGenerator(string directoryPath = null)
+    public DirectoryMetadataGenerator(string? directoryPath)
     {
-        directoryPath = directoryPath ?? AppConstants.ToolsDirectory;
+        directoryPath = directoryPath ??= AppConstants.ToolsDirectory;
         if (!Directory.Exists(directoryPath))
         {
-            Debug.WriteLine($"Directory does not exist: {directoryPath}");
+            Trace.WriteLine($"Directory does not exist: {directoryPath}");
             Directory.CreateDirectory(directoryPath);
         }
 
@@ -50,7 +50,7 @@ public class DirectoryMetadataGenerator
     /// <param name="directoryPath">Path of directory.</param>
     /// <param name="writeToFile">bool value to write metadata to file.</param>
     /// <returns>List of FileMetadata objects in the directory.</returns>
-    private static List<FileMetadata> CreateFileMetadata(string directoryPath = null)
+    public static List<FileMetadata> CreateFileMetadata(string directoryPath)
     {
         directoryPath ??= AppConstants.ToolsDirectory;
         List<FileMetadata> metadata = new List<FileMetadata>();
@@ -73,7 +73,7 @@ public class DirectoryMetadataGenerator
     /// </summary>
     /// <param name="filePath">Path of file</param>
     /// <returns>SHA-256 hash of file</returns>
-    private static string ComputeFileHash(string filePath)
+    public static string ComputeFileHash(string filePath)
     {
         using SHA256 sha256 = SHA256.Create();
         using FileStream stream = File.OpenRead(filePath);

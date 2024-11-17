@@ -1,4 +1,5 @@
 ﻿/******************************************************************************
+ *
 * Filename    = Client.cs
 *
 * Author      = Amithabh A and Garima Ranjan
@@ -54,7 +55,12 @@ public class Client : INotificationHandler
     {
         try
         {
-            string serializedSyncUpPacket = Utils.SerializedSyncUpPacket();
+            string? serializedSyncUpPacket = Utils.SerializedSyncUpPacket();
+
+            if (serializedSyncUpPacket == null)
+            {
+                throw new Exception("Failed to serialize SyncUpPacket");
+            }
 
             // UpdateUILogs("Sending syncup request to the server");
             Trace.WriteLine("[Updater] Sending data as FileTransferHandler...");
@@ -125,7 +131,12 @@ public class Client : INotificationHandler
         try
         {
             UpdateUILogs("Received SyncUp request from server");
-            string serializedMetaData = Utils.SerializedMetadataPacket();
+            string? serializedMetaData = Utils.SerializedMetadataPacket();
+
+            if (serializedMetaData == null)
+            {
+                throw new Exception("Failed to serialize metadata");
+            }
 
             // Sending data to server
             Trace.WriteLine("[Updater] Sending data as FileTransferHandler...");
@@ -144,9 +155,16 @@ public class Client : INotificationHandler
         try
         {
             FileContent fileContent = dataPacket.FileContentList[0];
-            string? serializedContent = fileContent.SerializedContent;
+
+            if (fileContent.SerializedContent == null)
+            {
+                throw new Exception("SerializedContent in FileContent is null");
+            }
+            string serializedContent = fileContent.SerializedContent;
+
             List<string> invalidFileNames = Utils.DeserializeObject<List<string>>(serializedContent);
             UpdateUILogs("Received invalid file names from server");
+
             ShowInvalidFilesInUI(invalidFileNames);
         }
         catch (Exception ex)
@@ -295,6 +313,11 @@ public class Client : INotificationHandler
 
             // Serialize and send DataPacket
             string? serializedDataPacket = Utils.SerializeObject(dataPacketToSend);
+
+            if (serializedDataPacket == null)
+            {
+                throw new Exception("Failed to serialize DataPacket");
+            }
 
             UpdateUILogs("Sending requested files to server");
             Trace.WriteLine("Sending files to server");
