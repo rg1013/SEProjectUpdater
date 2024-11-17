@@ -79,6 +79,16 @@ public class Server : INotificationHandler
         Trace.WriteLine("[Updater] Broadcasting the new files");
         try
         {
+            if (serializedPacket == null)
+            {
+                throw new Exception("Serialized packet is null");
+            }
+
+            if (_communicator == null)
+            {
+                throw new Exception("Communicator is null");
+            }
+
             _communicator.Send(serializedPacket, "FileTransferHandler", null); // Broadcast to all clients
         }
         catch (Exception ex)
@@ -105,19 +115,22 @@ public class Server : INotificationHandler
         try
         {
             UpdateUILogs($"Sending sync up request to client {clientId}");
-            string serializedSyncUpPacket = Utils.SerializedSyncUpPacket();
+
+            string? serializedSyncUpPacket = Utils.SerializedSyncUpPacket();
+            if (serializedSyncUpPacket == null)
+            {
+                throw new Exception("Serialized SyncUp packet is null");
+            }
+
+            if (_communicator == null)
+            {
+                throw new Exception("Communicator is null");
+            }
 
             // Write equivalent of this: 
             // UpdateUILogs("Syncing Up with the server");
             Trace.WriteLine($"[Updater] Sending SyncUp request dataPacket to client: {clientId}");
-            if (_communicator != null)
-            {
-                _communicator.Send(serializedSyncUpPacket, "FileTransferHandler", clientId);
-            }
-            else
-            {
-                UpdateUILogs("Communicator is null");
-            }
+            _communicator.Send(serializedSyncUpPacket, "FileTransferHandler", clientId);
         }
         catch (Exception ex)
         {
@@ -299,31 +312,52 @@ public class Server : INotificationHandler
             // client along with list of filenames that needs to be changed in the client side
             if (comparerInstance.ValidateSync())
             {
-                List<string> invalidFileNames = comparerInstance.InvalidSyncUpFiles;
-
-                FileContent fileContentToSend = new FileContent(
-                        "invalidFileNames.list",
-                        Utils.SerializeObject(invalidFileNames)
-                        );
-
-                DataPacket dataPacketToSend = new DataPacket(
-                        DataPacket.PacketType.InvalidSync,
-                        new List<FileContent> { fileContentToSend }
-                        );
-
-                string serializedDataPacket = Utils.SerializeObject(dataPacketToSend);
-
                 try
                 {
-                    UpdateUILogs($"Sending files to client and waiting to recieve files from client {clientId}");
-                    communicator.Send(serializedDataPacket, "FileTransferHandler", clientId);
+                    List<string> invalidFileNames = comparerInstance.InvalidSyncUpFiles;
 
-                    // End the sync up
-                    server.CompleteSync();
+                    string? serializedInvalidFileNames = Utils.SerializeObject(invalidFileNames);
+
+                    if (serializedInvalidFileNames == null)
+                    {
+                        throw new Exception("Serialized invalid file names is null");
+                    }
+
+                    FileContent fileContentToSend = new FileContent(
+                            "invalidFileNames.list",
+                            serializedInvalidFileNames
+                            );
+
+                    DataPacket dataPacketToSend = new DataPacket(
+                            DataPacket.PacketType.InvalidSync,
+                            new List<FileContent> { fileContentToSend }
+                            );
+
+                    string? serializedDataPacket = Utils.SerializeObject(dataPacketToSend);
+
+                    try
+                    {
+                        UpdateUILogs($"Sending files to client and waiting to recieve files from client {clientId}");
+
+
+                        if (serializedDataPacket == null)
+                        {
+                            throw new Exception("Serialized data packet is null");
+                        }
+
+                        communicator.Send(serializedDataPacket, "FileTransferHandler", clientId);
+
+                        // End the sync up
+                        server.CompleteSync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.WriteLine($"[Updater] Error sending data to client: {ex.Message}");
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Trace.WriteLine($"[Updater] Error sending data to client: {ex.Message}");
+                    Trace.WriteLine($"[Updater] Error in MetadataHandler's InvalidSyncUp: {ex.Message}");
                 }
             }
 
@@ -331,19 +365,19 @@ public class Server : INotificationHandler
             else
             {
                 // Serialize and save differences to C:\temp\ folder
-                string serializedDifferences = Utils.SerializeObject(differences);
+                string? serializedDifferences = Utils.SerializeObject(differences);
                 string tempFilePath = @$"{Server.s_serverDirectory}\differences.xml";
-
-                if (string.IsNullOrEmpty(serializedDifferences))
-                {
-                    Trace.WriteLine("[Updater] Serialization of differences failed or resulted in an empty string.");
-                    return; // Exit if serialization fails
-                }
 
                 try
                 {
+                    if (string.IsNullOrEmpty(serializedDifferences))
+                    {
+                        throw new Exception("Serialization of differences failed or resulted in an empty string.");
+                    }
+
                     Directory.CreateDirectory(Path.GetDirectoryName(tempFilePath)!);
                     File.WriteAllText(tempFilePath, serializedDifferences);
+
                     UpdateUILogs($"Differences file saved to {tempFilePath}");
                     Trace.WriteLine($"[Updater] Differences file saved to {tempFilePath}");
                 }
@@ -353,11 +387,13 @@ public class Server : INotificationHandler
                 }
 
                 // Prepare data to send to client
-                List<FileContent> fileContentsToSend = new List<FileContent>
-                    {
-                        // Added difference file to be sent to client
-                        new FileContent("differences.xml", serializedDifferences)
-                    };
+                List<FileContent> fileContentsToSend = new List<FileContent>();
+                if (!string.IsNullOrEmpty(serializedDifferences))
+                {
+
+                    // Added difference file to be sent to client
+                    fileContentsToSend.Add(new FileContent("differences.xml", serializedDifferences));
+                }
 
                 // Retrieve and add unique server files to fileContentsToSend
                 foreach (string filename in comparerInstance.UniqueServerFiles)
@@ -374,7 +410,7 @@ public class Server : INotificationHandler
                     Trace.WriteLine($"[Updater] Content length of {filename}: {content.Length}");
 
                     // Serialize file content and create FileContent object
-                    string serializedFileContent = Utils.SerializeObject(content);
+                    string? serializedFileContent = Utils.SerializeObject(content);
                     if (string.IsNullOrEmpty(serializedFileContent))
                     {
                         Trace.WriteLine($"[Updater] Warning: Serialized content for {filename} is null or empty.");
@@ -390,10 +426,16 @@ public class Server : INotificationHandler
                 Trace.WriteLine($"[Updater] Total files to send: {fileContentsToSend.Count}");
 
                 // Serialize DataPacket
-                string serializedDataPacket = Utils.SerializeObject(dataPacketToSend);
+                string? serializedDataPacket = Utils.SerializeObject(dataPacketToSend);
 
                 try
                 {
+
+                    if (serializedDataPacket == null)
+                    {
+                        throw new Exception("Serialized data packet is null");
+                    }
+
                     UpdateUILogs($"Sending files to client and waiting to recieve files from client {clientId}");
                     communicator.Send(serializedDataPacket, "FileTransferHandler", clientId);
                 }
@@ -447,7 +489,12 @@ public class Server : INotificationHandler
             dataPacket.DataPacketType = DataPacket.PacketType.Broadcast;
 
             // Serialize packet
-            string serializedPacket = Utils.SerializeObject(dataPacket);
+            string? serializedPacket = Utils.SerializeObject(dataPacket);
+
+            if (serializedPacket == null)
+            {
+                throw new Exception("Serialized broadcast packet is null");
+            }
 
             UpdateUILogs("Broadcasting the new files");
             Trace.WriteLine("[Updater] Broadcasting the new files");
@@ -482,8 +529,20 @@ public class Server : INotificationHandler
             }
             else
             {
-                Trace.WriteLine("[Updater] Read received data Successfully");
-                PacketDemultiplexer(serializedData, _communicator, this, _clientID);
+                try
+                {
+                    if (_communicator == null)
+                    {
+                        throw new Exception("Communicator is null");
+                    }
+
+                    Trace.WriteLine("[Updater] Read received data Successfully");
+                    PacketDemultiplexer(serializedData, _communicator, this, _clientID);
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine($"[Updater] Error in OnDataReceived: {ex.Message}");
+                }
             }
 
         }
