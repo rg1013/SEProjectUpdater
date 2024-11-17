@@ -7,7 +7,7 @@
 * 
 * Project     = Lab Monitoring Software
 *
-* Description = 
+* Description = Class to encapsulate file metadata for client-server communication
 *****************************************************************************/
 
 namespace Updater;
